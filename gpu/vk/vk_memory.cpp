@@ -4318,6 +4318,10 @@ void reap_mirrors() {   // (pools_mu held)
 }
 bool system_heap_usage(uint64_t* used, uint64_t* budget);   // (vk_vma.cpp; said here too: the pressure probe below runs before imports_give_back's own forward of it)
 void radv_import_headroom(uint64_t bytes) {
+#if defined(__PROSPERO__) || defined(PS5_VULKAN)
+    (void)bytes;
+    return;
+#endif
     constexpr uint64_t large_import = 64ull << 20, submit_reserve = 64ull << 20;
     if (bytes < large_import) return;
 #if !defined(__PROSPERO__) && !defined(PS5_VULKAN)
