@@ -32,6 +32,8 @@ import fastfp   # (longshot) fast float regions (A64_FASTFP): its emit_function,
 import lift_fixes
 import entry_hooks
 import suyu_rt_fixes
+import fastvec
+import fpxkeep
 import chunks
 import compact_bodies
 import standalone
@@ -49,6 +51,8 @@ fastfp.install()   # (before lift_fixes and poll wrap emit_function: theirs go a
 lift_fixes.install()
 entry_hooks.install()   # (host/*.c's ENTRY_HOOK_SYM hooks at the entry of their SDK functions: add() below)
 suyu_rt_fixes.install()
+fastvec.install()
+fpxkeep.install()
 compact_bodies.install()   # (after insn's classify: the bodies as runs, nx2/compact_bodies.py)
 
 
