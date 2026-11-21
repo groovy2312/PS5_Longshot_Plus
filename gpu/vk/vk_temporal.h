@@ -93,6 +93,7 @@ struct TemporalImage {
     VkImageView view = VK_NULL_HANDLE;
     VkFormat format = VK_FORMAT_UNDEFINED;
     uint32_t width = 0, height = 0;
+    VkImageUsageFlags usage = 0;
 };
 /// One frame's evaluation. color: the scene as the network samples it (tonemapped, square-root encoded: LDR, RGBA16F; linear
 /// light past 1 with the game's native HDR for an engine whose hdr() says it takes that, its output then linear as well);

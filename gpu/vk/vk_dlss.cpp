@@ -483,6 +483,16 @@ bool evaluate(VkCommandBuffer cmd, const TemporalFrame& f) {
         return false;
     }
     s.eval_result = NVSDK_NGX_Result_Success;
+    {
+        VkMemoryBarrier2 b{VK_STRUCTURE_TYPE_MEMORY_BARRIER_2};
+        b.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        b.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        b.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+        b.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+        VkDependencyInfo di{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
+        di.memoryBarrierCount = 1, di.pMemoryBarriers = &b;
+        vkCmdPipelineBarrier2(cmd, &di);
+    }
     return true;
 }
 
