@@ -764,6 +764,25 @@ DRIVE_READ = ("    c->x[%d]=recomp_load64(c,c->x[20] + 240);\n"
 DRIVE_CALL = ("    hos_oot_drive_target(c->x[20], c->x[%d], " + SOUND_SLOT + " + 2192);"
               "   /* (nx2/oot_patches.py: Link's driven body follows its target above 60 fps) */\n")
 DRIVE_DECL = "extern void hos_oot_drive_target(uint64_t controller, uint64_t body, uint64_t slot);\n"
+# A jump's takeoff speed (f_80b97d10: sqrt(2 g h) - g dt / 2 along the character's up, written to the vector its caller gave in x2,
+# kept in x19): on a backflip Link's body gets it for one physics update, so above 60 fps his hop was lower (one shorter step of
+# it) and a backflip down a slope took off twice. After its last store, hos_oot_jump_speed(the vector) keeps the speed for the
+# takeoff's velocity (TAKEOFF_VELOCITY_* below; host/oot_high_fps.h oot_takeoff_rest_speed). x19 is c->x[19] where the lift
+# keeps the function as the edits expect, x19_ in a lift with register locals.
+TAKEOFF_HEAD = "void f_80b97d10(Ctx *__restrict A64_NOESC c) {\n"
+TAKEOFF_STORE = "    {{ {{ uint64_t _v=0; memcpy(&_v,&c->vreg[2][0],4); recomp_store32(c,({x}+8ULL),_v); }} }}\n"
+TAKEOFF_X19 = ("c->x[19]", "x19_")
+TAKEOFF_CALL = "    hos_oot_jump_speed({x});   /* (nx2/oot_patches.py: a jump's takeoff above 60 fps) */\n"
+TAKEOFF_DECL = "extern void hos_oot_jump_speed(uint64_t vec);\n"
+# The takeoff's velocity: f_804f5030 hands Havok a body's velocity with the world's set-velocity call (its vtable +0x190, at
+# 0x804f6694: x1 the body's id, x2 the linear velocity it reads, x19 the body's object), Link's takeoff speed on the takeoff's
+# update. hos_oot_takeoff_velocity(the object, the velocity, the game's time object's slot) before the call gives a body the rest
+# of a 60 fps takeoff step's rise on the next update when the game asks no vertical speed there (a backflip), above a 60 cap.
+# f_804f5030 is kept as the edits expect (DRIVE_HEAD), so the call is written one way.
+TAKEOFF_VELOCITY_SITE = "{ uint64_t _t = c->x[8]; c->x[30] = 0x804f6698ULL; A64_ICALL(c, _t); }\n"
+TAKEOFF_VELOCITY_CALL = ("    hos_oot_takeoff_velocity(c->x[19], c->x[2], " + SOUND_SLOT + " + 2192);"
+                         "   /* (nx2/oot_patches.py: a jump's takeoff above 60 fps) */\n")
+TAKEOFF_VELOCITY_DECL = "extern void hos_oot_takeoff_velocity(uint64_t object, uint64_t velocity, uint64_t slot);\n"
 
 # Below 60 fps, Havok cloth (Link's cap, romfs Phive/Cloth): the simulate operator's per-frame setup, f_81b3aa48, loads its step
 # context's time (x22 + 8) and stores it with a substep's (+44, +48 of its frame data). The time is a 60th whatever the frame, so the
@@ -1156,6 +1175,46 @@ def patch_drive_target(s):
     if done and DRIVE_DECL not in s:
         s = s.replace('#include "a64.h"\n', '#include "a64.h"\n' + DRIVE_DECL, 1)
     return s, done
+
+
+def patch_jump_speed(s):
+    """A jump's takeoff speed to the host after f_80b97d10's last store: (s, 1) when f_80b97d10 is in s with it (made now or
+    before), (s, 0) when it is not here or its store of the vector's last part is not found once, as written"""
+    at = _function(s, TAKEOFF_HEAD)
+    if at is None:
+        return s, 0
+    head, end = at
+    body = s[head:end]
+    for x in TAKEOFF_X19:
+        store = TAKEOFF_STORE.format(x=x)
+        made = store + TAKEOFF_CALL.format(x=x)
+        if body.count(made) == 1:
+            return s, 1
+        if body.count(store) != 1:
+            continue
+        s = s[:head] + body.replace(store, made, 1) + s[end:]
+        if TAKEOFF_DECL not in s:
+            s = s.replace('#include "a64.h"\n', '#include "a64.h"\n' + TAKEOFF_DECL, 1)
+        return s, 1
+    return s, 0
+
+
+def patch_takeoff_velocity(s):
+    """A body's velocity through the host before f_804f5030's set-velocity call: (s, 1) when f_804f5030 is in s with it (made now
+    or before), (s, 0) when it is not here or the call is not found once, as written"""
+    at = _function(s, DRIVE_HEAD)
+    if at is None:
+        return s, 0
+    head, end = at
+    body = s[head:end]
+    if body.count(TAKEOFF_VELOCITY_CALL + TAKEOFF_VELOCITY_SITE) == 1:
+        return s, 1
+    if body.count(TAKEOFF_VELOCITY_SITE) != 1 or TAKEOFF_VELOCITY_CALL in body:
+        return s, 0
+    s = s[:head] + body.replace(TAKEOFF_VELOCITY_SITE, TAKEOFF_VELOCITY_CALL + TAKEOFF_VELOCITY_SITE, 1) + s[end:]
+    if TAKEOFF_VELOCITY_DECL not in s:
+        s = s.replace('#include "a64.h"\n', '#include "a64.h"\n' + TAKEOFF_VELOCITY_DECL, 1)
+    return s, 1
 
 
 def patch_floor_carry(s):
@@ -1742,6 +1801,16 @@ def patch_file(s, name, protect_hearts=False):
     if drive != out:
         lines.append("oot_patches: Link's driven body's target above 60 fps in " + name)
     out = drive
+    jump, found = patch_jump_speed(out)
+    counts["jump takeoff"] += found
+    if jump != out:
+        lines.append("oot_patches: a jump's takeoff speed above 60 fps in " + name)
+    out = jump
+    velocity, found = patch_takeoff_velocity(out)
+    counts["takeoff velocity"] += found
+    if velocity != out:
+        lines.append("oot_patches: a jump's takeoff velocity above 60 fps in " + name)
+    out = velocity
     cue, found = patch_song_cue(out)
     counts["song note flag"] += found
     if cue != out:
@@ -1806,6 +1875,10 @@ def report(paths, counts, protect_hearts=False):
         print("oot_patches: WARNING: a moving floor's carry was found at %d of %d places" % (total["floor carry"], len(FLOOR_SITES)))
     if total["driven target"] != len(DRIVE_REGS):   # (without them, above 60 fps Link's pull-up onto a ledge falls short)
         print("oot_patches: WARNING: the driven body's target was found at %d of %d places" % (total["driven target"], len(DRIVE_REGS)))
+    if total["jump takeoff"] != 1:   # (without it, above 60 fps Link's jumps hop lower and a backflip down a slope takes off twice)
+        print("oot_patches: WARNING: a jump's takeoff speed was found %d times, not once" % total["jump takeoff"])
+    if total["takeoff velocity"] != 1:   # (without it the takeoff speed is kept and not used: the hop is the game's)
+        print("oot_patches: WARNING: the set-velocity call for a jump's takeoff was found %d times, not once" % total["takeoff velocity"])
     if total["cloth time"] != 1:   # (without it, below 60 fps Link's cap and the other cloth run slow: they swing out and settle slowly)
         print("oot_patches: WARNING: the cloth's time was found %d times, not once" % total["cloth time"])
     if total["cloth solve"] != 1:   # (without it, above 60 fps with HOS_FPS_CLOTH_60=1 the cloth is still solved every frame)
