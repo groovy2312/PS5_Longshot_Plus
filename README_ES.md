@@ -1,6 +1,6 @@
 # PS5 Longshot Plus (`PPSA99198`) — Guía Oficial en Español
 
-**Port Nativo para PlayStation 5 y Builder Multiplataforma (Windows y Linux) — `v0.3.2-plus`**
+**Port Nativo para PlayStation 5 y Builder Multiplataforma (Windows y Linux) — `v0.3.3-plus`**
 
 > 🌐 **Idioma / Language:** [English (`README.md`)](README.md) · **Español (`README_ES.md`)**
 
@@ -16,10 +16,10 @@ Antes que nada, nuestro más sincero agradecimiento a:
 
 ---
 
-## Recomendaciones Críticas de Compilación e Instalación (`v0.3.2-plus`)
+## Recomendaciones Críticas de Compilación e Instalación (`v0.3.3-plus`)
 
 ### 1. En tu PC (Windows / Linux): Recompilar desde cero es ALTAMENTE RECOMENDADO (obligatorio para aplicar los cambios del núcleo)
-* Aunque el Builder permite actualizar compilaciones previas, para **`v0.3.2-plus`** es **altamente recomendado (prácticamente obligatorio) generar la carpeta `PPSA99198` completamente desde cero**.
+* Aunque el Builder permite actualizar compilaciones previas, para **`v0.3.3-plus`** es **altamente recomendado (prácticamente obligatorio) generar la carpeta `PPSA99198` completamente desde cero**.
 * **Por qué:** Esta versión actualiza el binario principal (`eboot.bin` / `image.bin`), incorpora el nuevo escáner automático de ROMs por *Title ID* en `/data/longshotplus/roms/`, añade el *watchdog* de telemetría de cómputo (`is_compute`) y aplica las correcciones atómicas de RDNA 2 (`#2088`).
 * **Cómo hacerlo:** Antes de pulsar **Build**, elimina o elige una carpeta de salida nueva para que no reutilice archivos intermedios viejos de `longshot-ps5-work`.
 
@@ -48,7 +48,7 @@ Todo tu progreso, perfiles, capturas de guardado y ajustes del juego se almacena
 
 ## Detección Automática del Archivo `.nup` y Estructura de Carpetas en PS5
 
-En **`v0.3.2-plus`**, el juego ya **no depende de un único nombre de archivo fijo**: al arrancar, escanea automáticamente las carpetas compatibles en orden de prioridad y lee la cabecera de cada archivo `.nup` hasta verificar el *Title ID* oficial de *Ocarina of Time* (`0400486024DEC000`).
+En **`v0.3.3-plus`**, el juego ya **no depende de un único nombre de archivo fijo**: al arrancar, escanea automáticamente las carpetas compatibles en orden de prioridad y lee la cabecera de cada archivo `.nup` hasta verificar el *Title ID* oficial de *Ocarina of Time* (`0400486024DEC000`).
 
 ### Orden de búsqueda automática en la PS5
 1. **`/data/longshotplus/roms/`** *(Ruta principal recomendada — acepta cualquier nombre terminado en `.nup`, por ejemplo `oot.nup` o `zelda_oot.nup`)*
@@ -92,14 +92,14 @@ En **`v0.3.2-plus`**, el juego ya **no depende de un único nombre de archivo fi
 
 ---
 
-## Resumen de Novedades Técnicas en `v0.3.2-plus`
+## Resumen de Novedades Técnicas en `v0.3.3-plus`
 
 * **Reloj en Tiempo Real (`Show clock` — `Off` / `12h` / `24h`)**: Nuevo selector en **Gameplay** que muestra la hora local del sistema en la esquina derecha de la barra superior del menú interno y en la esquina superior derecha del HUD (con separación automática respecto al contador de FPS).
 * **Soporte de `RX_VK_SKIP_CODE` en Compute Dispatches y Telemetría de `code_key`**: Extensión de `RX_VK_SKIP_CODE` (y registro de `its code:` en `RX_VK_SKIP_PROG`) para *compute dispatches*, permitiendo diagnosticar y aislar shaders de cómputo problemáticos en RDNA 2 (como `prog_key=53fcaee4dc45c6ee` en el Coliseo de los Monstruos).
 * **Perfil Mejorado para PS5 Pro (`13.2 GiB` de memoria directa)**: Presupuesto de renderizador ampliado a 3.5 GiB (`HOS_PS5_RENDER_MB=3584`), reserva de texturas ajustada (`HOS_PS5_TEX_RESERVE_MB=1600`) y mayor retención de texturas a 1024 texels (`RX_VK_EVICT_MIN_UNUSED=60`) sin afectar la estabilidad de PS5 Fat / Slim.
 * **Plegado de Comparaciones con Signo en CPU (`A64_SUB_V`, `#1871`)**: Simplifica ~170,000 comparaciones con signo del código recompilado a una sola instrucción de CPU x86-64, reduciendo la carga del procesador y el tamaño de `image.bin` en PS5.
 
-### Comparativa de Perfiles: PS5 Fat / Slim vs PS5 Pro (`v0.3.2-plus`)
+### Comparativa de Perfiles: PS5 Fat / Slim vs PS5 Pro (`v0.3.3-plus`)
 
 | Característica / Parámetro | PS5 Fat / Slim (`base`) | PS5 Pro (`pro`) |
 | :--- | :--- | :--- |
@@ -119,3 +119,9 @@ En **`v0.3.2-plus`**, el juego ya **no depende de un único nombre de archivo fi
 * **Gestión de memoria en 4 niveles para PS5 Fat:** `zone_boost` proactivo (`< 2420 MiB`), bloqueo de re-expansión ASTC, purga de *render targets* obsoletos (`1152 / 512 MiB`) y piso preventivo `MEMORY_FLOOR_EXIT` (`220 MiB`) con `RX_VK_TEX_MAX_DIM=512` y `RX_VK_TEX_SKIP_MB=2` (~1.88 GiB libres verificados).
 * **Telemetría ampliada en `crash_trace.txt`:** Registra `is_compute=1|0`, `prog_key`, `free_mem` y `zone_boost` en tiempo real sin búfer (`O_SYNC`).
 * **Mejoras del Builder (`#59`, `#62`, `#63`):** Incluye `PS5LongshotPlusBuilder-cli.cmd` redirigible en Windows, modo de bajo consumo de memoria (`2–3 GB` de RAM) y corrección del paso 6 en PyQt6.
+
+### Novedades en v0.3.3-plus
+- **Puesta a cero previa al mapeo de memoria guest (`#68`, `HOS_PS5_ZERO_FIRST=1`):** limpia los bloques de memoria directa antes de mapearlos al espacio del juego para evitar cierres por puntero nulo al cargar partidas.
+- **Chunks de importación GPU de 4 MB por defecto (`#74`, `RX_VK_IMPORT_CHUNK_MB=4`, `RX_VK_IMPORT_SPAN_MB=16`):** reduce páginas sin usar en PS5, liberando 200–330 MiB reales en PS5 Fat / Slim.
+- **Búsqueda O(1) de mutex por índice embebido (`#75`, `HOS_MUTEX_IX=1`):** guarda el índice del objeto host en `nn::os::MutexType + 8`, reduciendo la carga de CPU en sincronización.
+- **Mejoras de memoria y estabilidad upstream (`#2194`, `#2258`) + Watchdog Dual + `PS5_PayloadSDK` actualizado (`55a2de04`).**

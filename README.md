@@ -1,6 +1,6 @@
 # PS5 Longshot Plus (`PPSA99198`)
 
-**PlayStation 5 Native Port & Cross-Platform Builder (Windows & Linux) — `v0.3.2-plus`**
+**PlayStation 5 Native Port & Cross-Platform Builder (Windows & Linux) — `v0.3.3-plus`**
 
 > 🌐 **Language / Idioma:** **English (`README.md`)** · [Español (`README_ES.md` — Guía Completa en Español)](README_ES.md)
 
@@ -14,9 +14,9 @@
 
 ---
 
-## Critical Build & Installation Recommendations (`v0.3.2-plus`)
+## Critical Build & Installation Recommendations (`v0.3.3-plus`)
 
-* **PC Rebuild (`v0.3.2-plus`):** Compiling a fresh `PPSA99198` folder from scratch is highly recommended due to updated console executables (`eboot.bin` / `image.bin`), automatic Title ID `.nup` scanning, compute watchdog telemetry, and RDNA 2 subgroup atomic fixes (`#2088`).
+* **PC Rebuild (`v0.3.3-plus`):** Compiling a fresh `PPSA99198` folder from scratch is highly recommended due to updated console executables (`eboot.bin` / `image.bin`), automatic Title ID `.nup` scanning, compute watchdog telemetry, and RDNA 2 subgroup atomic fixes (`#2088`).
 * **PS5 Clean Installation:** Overwriting files works, but deleting legacy shader caches (`cache/` and `radv-shader-cache/`) is strongly advised to prevent stale pipelines.
 
 ---
@@ -62,7 +62,7 @@ Automatic ROM scanning verifies the official *Ocarina of Time* Title ID (`040048
 
 ---
 
-## What's New in `v0.3.2-plus`
+## What's New in `v0.3.3-plus`
 
 * **Real-Time Clock (`Show clock` — `Off` / `12h` / `24h`)**: New option in **Gameplay** displaying the local system time in the top-right corner of the internal menu bar and the in-game HUD (automatically padded above the FPS counter when both are top-right).
 * **Compute Dispatch `RX_VK_SKIP_CODE` & Stage Code Telemetry**: Extended `RX_VK_SKIP_CODE` (and `RX_VK_SKIP_PROG` stage code logging) to compute dispatches to isolate and diagnose RDNA 2 compute shader hangs (such as Monster Coliseum `prog_key=53fcaee4dc45c6ee`).
@@ -830,7 +830,7 @@ By default, **PS5 Longshot Plus** runs safely with **AMD FSR 3.1**. To unlock **
 * **Recommended Stability Setting (Zero-Crash Long Sessions):** For players on **PS5 Fat / Slim** who want extended play sessions without sudden memory exits when repeatedly entering and exiting open areas (such as Hyrule Field, Kakariko Village, or Castle Town), open the in-game menu (**Touchpad Click + Options → Graphics**) and set **Output resolution** to **`1280x720`** with **`Built-in` (`FG integrada`)** frame generation—or tune the resolution scale to match your console model (**PS5 Fat/Slim** vs **PS5 Pro**).
 * **Console Model Selection:** The Builder includes dedicated profiles for both **PS5 / PS5 Slim** (12 GB unified memory, 512-texel limit) and **PS5 Pro** (expanded memory mode, 1024-texel limit).
 
-### PS5 Fat / Slim vs PS5 Pro Profile Comparison (`v0.3.2-plus`)
+### PS5 Fat / Slim vs PS5 Pro Profile Comparison (`v0.3.3-plus`)
 
 | Feature / Parameter | PS5 Fat / Slim (`base`) | PS5 Pro (`pro`) |
 | :--- | :--- | :--- |
@@ -845,3 +845,8 @@ By default, **PS5 Longshot Plus** runs safely with **AMD FSR 3.1**. To unlock **
 | **Recommended Output Resolution** | `1920x1080` (or `1280x720` for long sessions) | `1920x1080` / `2560x1440` / `3840x2160` |
 | **Default Upscaler & Frame Generation** | AMD FSR 3.1 (or FSR 4.1.2 Lite) + Built-in FG 2x | AMD FSR 3.1 (or FSR 4.1.2 Lite) + Built-in FG 2x |
 
+### What is new in v0.3.3-plus
+- **Pre-map guest memory zeroing (`#68`, `HOS_PS5_ZERO_FIRST=1`):** zeroes direct memory ranges before mapping into guest address space to prevent null-pointer crashes when loading saves.
+- **4 MB GPU import chunks by default (`#74`, `RX_VK_IMPORT_CHUNK_MB=4`, `RX_VK_IMPORT_SPAN_MB=16`):** cuts unused page commits on PS5, freeing 200–330 MiB on base PS5 / PS5 Slim.
+- **O(1) embedded mutex index lookup (`#75`, `HOS_MUTEX_IX=1`):** stores the host object index directly in `nn::os::MutexType + 8`, cutting mutex lookup overhead on PS5.
+- **Upstream stability & memory fixes (`#2194`, `#2258`) + Dual Watchdog + updated `PS5_PayloadSDK` (`55a2de04`).**
