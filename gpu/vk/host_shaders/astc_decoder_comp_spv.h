@@ -16,7 +16,6 @@
 // and run it again; don't edit this file.
 	// 1116.6.0
 	 #pragma once
-};
 	// 1116.6.0
 	 #pragma once
 static constexpr uint32_t ASTC_DECODER_COMP_SPV[] = {

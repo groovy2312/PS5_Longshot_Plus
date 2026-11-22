@@ -7502,13 +7502,20 @@ void draw(VkCommandBuffer cmd, NvnState& s, const DrawArgs& d) {
     __atomic_store_n(&g_last_draw_key, cp->key & ~(1ULL << 63), __ATOMIC_RELAXED);
     __atomic_store_n(&g_last_gfx_key, cp->key & ~(1ULL << 63), __ATOMIC_RELAXED);
     uint64_t gfx_s0 = 0ULL, gfx_s1 = 0ULL;
-    if (s.has_prog) {
+    {
+        const std::string ck = program_code_keys(s);
+        const char* p = ck.c_str();
         int idx = 0;
-        for (const Code& c : codes_of(s)) {
-            if (c.header_only) continue;
-            if (idx == 0) gfx_s0 = c.key;
-            else if (idx == 1) { gfx_s1 = c.key; break; }
+        while (*p && idx < 2) {
+            while (*p == ' ') p++;
+            const char* colon = strchr(p, ':');
+            if (!colon) break;
+            char* end = nullptr;
+            uint64_t val = strtoull(colon + 1, &end, 16);
+            if (idx == 0) gfx_s0 = val;
+            else gfx_s1 = val;
             idx++;
+            p = end;
         }
     }
     __atomic_store_n(&g_last_stage0_key, gfx_s0, __ATOMIC_RELAXED);
