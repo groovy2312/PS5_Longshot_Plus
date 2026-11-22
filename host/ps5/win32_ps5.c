@@ -813,6 +813,18 @@ __attribute__((constructor)) void hos_ps5_clock_init(void) {
 /* The game's package on the console: HOS_PS5_NUP, else the copy an emulator there already keeps, so one 25 GB file serves
    both: EglantinePS5's folder (under the name its dump has), PS5_Lichii's, then the one that had before 2026-11-10 (when
    none is there, the first, for the message). */
+static int ps5_is_oot_nup(const char *path) {
+    FILE *f = fopen(path, "rb");
+    if (!f) return 0;
+    char hdr[16384];
+    size_t got = fread(hdr, 1, sizeof hdr - 1, f);
+    fclose(f);
+    if (got < 16) return 0;
+    for (size_t i = 0; i + 16 <= got; i++) {
+        if (strncasecmp(hdr + i, "0400486024dec000", 16) == 0) return 1;
+    }
+    return 0;
+}
 static int ps5_find_any_nup_in_dir(const char *dir, char *out, size_t out_sz) {
     DIR *d = opendir(dir);
     if (!d) return 0;
@@ -823,7 +835,7 @@ static int ps5_find_any_nup_in_dir(const char *dir, char *out, size_t out_sz) {
         size_t len = strlen(name);
         if (len > 4 && strcasecmp(name + len - 4, ".nup") == 0) {
             int n = snprintf(out, out_sz, "%s/%s", dir, name);
-            if (n > 0 && (size_t)n < out_sz && access(out, R_OK) == 0) {
+            if (n > 0 && (size_t)n < out_sz && access(out, R_OK) == 0 && ps5_is_oot_nup(out)) {
                 closedir(d);
                 return 1;
             }
