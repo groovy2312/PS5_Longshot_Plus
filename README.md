@@ -1,88 +1,77 @@
-<h1 align="center">
-  <br>
-  <a>
-  <img src="ps5/sce_sys/icon0.png" alt="Longshot" width="200">
-</a>
+# PS5 Longshot Plus (`PPSA99198`)
 
-  <br>
-  <b>Longshot</b>
-  <br>
-</h1>
+**PlayStation 5 Native Port & Cross-Platform Builder (Windows & Linux) — `v0.3.1-plus`**
 
-<h4 align="center">Longshot for the PlayStation 5: a supported console game running natively on the PS5, without emulation.
-</h4>
-
-<p align="center">
-  <a href="ps5/builder/README.md"><b>The PS5 Builder</b></a> |
-  <a href="ps5/README.md"><b>The port</b></a> |
-  <a href="https://longshot.magicbean.dev/">Longshot for PC (upstream)</a>
-</p>
-
-> [!IMPORTANT]
-> **This repository is the PlayStation 5 version of Longshot.** It is a port of
-> [Longshot](https://git.magicbean.dev/MagicBeanDev/Longshot) to the PS5, with
-> [PS5_Vulkan](https://github.com/mihawk-99/PS5_Vulkan) as its Vulkan driver, and it builds one thing: the PS5 title.
->
-> **No PC builds of Longshot are included or released here.** There is no Windows or Linux game, launcher or builder
-> in this repository's releases. For Longshot on a PC, go to [Longshot itself](https://longshot.magicbean.dev/).
->
-> What the releases here hold is the **Longshot PS5 Builder**: a desktop program for Linux (an AppImage) and Windows
-> (a portable folder) that makes the PS5 title folder from your own copy of the game, on your own computer. It holds
-> no game files.
->
-> - Using it, and what it does: [ps5/builder/README.md](ps5/builder/README.md)
-> - The port: what runs, how it was measured, the console's profiles: [ps5/README.md](ps5/README.md)
->
-> It runs on the **PS5 Pro** and on the **base PS5** (PS5 and PS5 Slim): the builder asks which one the folder is for.
->
-> A jailbroken PS5 with a homebrew environment is needed to run the title. The game is not included, and nothing here
-> explains how to get it.
-
-**[Install and play](#install-and-play)** and **[In-game menu](#in-game-menu)** below are this port's. The other
-sections are **Longshot's own README, for its PC versions**, kept as they are for reference: the status table, mods,
-building from source and the rest describe the PC game, not this port.
+> 🌐 **Language / Idioma:** **English (`README.md`)** · [Español (`README_ES.md` — Guía Completa en Español)](README_ES.md)
 
 ---
 
-Longshot is a static recompilation of a supported console game. The game's code is translated to C and compiled into a Windows or Linux program, rebuilding the graphics on Vulkan, with the console's system software reimplemented. All of this happens **on your PC, from your own copy of the game**.
+## Credits & Acknowledgments
 
-Longshot is a continuation of [Hookshot](https://github.com/NotRexed/Hookshot). The top maintainers have moved to this project.
+* **MagicBeanDev:** Core *Longshot* static recompilation engine and Vulkan renderer.
+* **HeydeMoura:** PlayStation 5 native port (`PS5_Vulkan` / `RADV`) and cross-platform Builder.
+* **Community of Testers & Contributors:** Real-world PS5 testing (Fat, Slim, Pro), telemetry sharing (`crash_trace.txt`), and daily refinements.
 
-**[Join us on Discord](https://discord.gg/magicbean)!**
-<br>
+---
 
-> [!IMPORTANT]
-> This repository **does not contain the game, keys or an executable**, and it does not explain how to get them. You
-> need your own copy. Everything the build creates (`longshot.exe`, the generated code, the shader caches and your
-> saves) comes from your game and stays on your PC. Never share those files.
+## Critical Build & Installation Recommendations (`v0.3.1-plus`)
 
-## Custom Build Enhancements (groovy2312 Fork — PS5 Longshot Plus)
+* **PC Rebuild (`v0.3.1-plus`):** Compiling a fresh `PPSA99198` folder from scratch is highly recommended due to updated console executables (`eboot.bin` / `image.bin`), automatic Title ID `.nup` scanning, compute watchdog telemetry, and RDNA 2 subgroup atomic fixes (`#2088`).
+* **PS5 Clean Installation:** Overwriting files works, but deleting legacy shader caches (`cache/` and `radv-shader-cache/`) is strongly advised to prevent stale pipelines.
 
-This custom fork integrates upstream PS5 improvements, pending stability Pull Requests, performance optimizations from `MagicBeanDev/Longshot`, and custom enhancements tailored for PS5 stability and visual quality:
+---
 
-### Key Features & Improvements
-- **PS5 Longshot Plus Branding & Assets:** Updated title metadata (`LONGSHOT PLUS` across all locales in `sce_sys/param.json`), custom 512×512 emblem (`icon0.png`), updated splash screen (`PS5 LONGSHOT PLUS`), and Node 24 CI/CD workflows (`actions/*@v5`) with automatic `sce_sys/` cache invalidation.
-- **Smart `Auto (This PS5)` & AMD FSR 4.1.2 (Lite):** Automatically detects FSR 4.1.2 lite shader weights (`/data/longshot/PPSA99198/fsr4/lite/` or `/data/homebrew/PPSA99198/fsr4/lite/`) and activates **AMD FSR 4** with dynamic internal resolution, falling back safely to **AMD FSR 3.1** when absent.
-- **4-Tier Base PS5 Memory Management (`zone_boost` + Stale Target Purging):** Proactive `zone_boost` (`< 2420 MiB` free), ASTC texture re-expansion lock while active, early/critical purging of inactive textures and stale GPU-written render targets (`1152 MiB` / `512 MiB`), and a clean preventive exit floor (`220 MiB`) to prevent `SIGABRT` (`CE-108255-1`).
-- **Fast First-Boot Shaders & Base PS5 Memory Tuning:** Defaults to `RX_VK_COMPILE_SHADERS=most` and tuned ASTC limits (`RX_VK_TEX_MAX_DIM=256`, `RX_VK_TEX_SKIP_MB=1`, `RX_VK_WB_MAX_KB=1024`) in the PS5 / PS5 Slim profile.
-- **Unbuffered GPU Freeze & Crash Logger (`crash_trace.txt`):** Real-time `O_SYNC` watchdog and signal handler writing active shader `prog_key` and free direct memory straight to `/data/homebrew/PPSA99198/logs/crash_trace.txt` on 2-second GPU hangs or fatal signals.
-- **Recommended PS5 Default Profile:** Automatically configures `Auto (This PS5)` with `16:9` aspect ratio, `1920x1080` native output, `TV Mode`, `AMD FSR 4` (with safe `AMD FSR 3.1` fallback), `Auto (dynamic)` internal resolution, `30%` sharpness, and `2x` frame generation via `Built-in` (`FG integrada`).
-- **Multilingual Startup Screen (`startup_i18n.h`):** Localizes shader preparation messages (`Step 1 of 2`, `Getting the game ready for your console`, time remaining, and `PS5 Longshot Plus` description) to the console or selected menu language.
-- **Builder Stability & Community PR Support:** Fixed PyQt6 `KeyError: 6` crash when entering step 6 (`Listing the game's shaders`) after packaging `PPSA99198`, added `utf-8-sig` + full traceback reporting in `pipeline.py`, and added `.github/pull_request_template.md`.
-- **Smart Neighboring-Map Preload & Heap Compaction Hold (`#1814`, `#1870`, `HOS_OCB_HOLD_MS`, `HOS_TEX_COMPACT_MS`):** Retains neighboring map selections across camera/direction changes and throttles texture heap compaction to eliminate file-thrashing loops and memory spikes in open areas.
-- **Expanded Host Sync Object Cache (`#1781`, `HOS_OBJ_CACHE=16384`):** Upgrades per-thread Horizon OS sync object lookup tables to a 4-way 16,384-entry cache and preserves accurate BGM timing above 60 FPS.
-- **RDNA 2 / RADV Compute Atomic Hang Fix (`#2088`):** Serializes compare-exchange float atomic add loops per subgroup via `OpGroupNonUniformElect` (`SubgroupCasLoop`), eliminating 2-second GPU hangs in post-temple lighting passes on PS5.
-- **Dedicated ROM Directory & Auto-Detection (`/data/longshotplus/roms/`):** Scans `/data/longshotplus/roms/` (with automatic fallback to `/data/longshot/roms/`, `/data/eglantineps5/roms/`, and `/data/lichii/roms/oot/`) and verifies the Zelda OoT Title ID (`0400486024DEC000`) inside `.nup` headers regardless of filename.
-- **FSR 3.1 Direct Output & High-FPS Backflip Takeoff (`#2085`, `#2071`):** Saves ~1 ms per frame on FSR 3.1 via direct output writes and narrowed barriers, and restores 60-FPS-equivalent backflip takeoff height above 60 FPS (`HOS_FPS_TAKEOFF`).
-- **Compute Dispatch Telemetry (`crash_trace.txt`):** Logs `is_compute=1|0` alongside `prog_key` and free direct memory on GPU freezes or memory-floor exits.
-- **Upstream & Performance Merges:** Integrates PRs `#6`, `#23`, `#32`, `#33`, `#35`, `#41`, `#44`, `#47` (precompiled startup shaders), and `#62` (low-memory 2–3 GB Builder mode) from `heydemoura/PS5_Longshot`, plus precompiled pipeline state databases (`#1688`, `#1615`), native `memcpy` / `memset` hooks (`#1209`), ThinLTO TLS coherence (`#755`), stepped shadow map buckets (`#1256`), high-FPS cloth/boat physics (`#1384`, `#1528`), RADV capture-spare headroom (`#1933`, `#1961`), and atomic `spin_begin` (`#2012`) from `MagicBeanDev/Longshot`.
+## How to Back Up Your Save Data (`user/`) Before Updating
 
-### Recommended `longshot_env.txt` Switches
-- `RX_VK_COMPILE_SHADERS=most` — Skips ~26,000 predicted pipelines on first boot for fast startup.
-- `RX_VK_ZONE_BOOST_SEC=90` — Duration in seconds of the automatic `720p / 75%` FSR 4 memory-relief window (default `90`).
-- `RX_VK_TEX_MAX_DIM=256` & `RX_VK_TEX_SKIP_MB=1` — Base PS5 (12 GB) texture mip limits to keep headroom for FSR 4.
-- `HOS_PS5_MEM_FLOOR_MB=220` — Preventive clean-exit memory floor in MiB (default `220`) to protect RADV/VMA against `SIGABRT`.
+Save data, slots, thumbnails, and settings reside in **`user/`**. Always back up this directory inside `/data/homebrew/PPSA99198/` via FTP (port `2121`) along with `longshot_options.ini` and `fsr4/lite/` before replacing the build.
 
+---
+
+## Automatic `.nup` ROM Discovery & PS5 Folder Structure
+
+Automatic ROM scanning verifies the official *Ocarina of Time* Title ID (`0400486024DEC000`) across priority paths:
+1. `/data/longshotplus/roms/` (Primary)
+2. `/data/longshot/roms/` (Fallback)
+3. `/data/eglantineps5/roms/` (Fallback)
+4. `/data/lichii/roms/oot/` (Fallback)
+
+### PS5 Directory Layout Diagram
+
+```text
+/data/
+├── homebrew/
+│   └── PPSA99198/                     <-- Output folder built by PS5 Longshot Plus Builder
+│       ├── eboot.bin                  <-- Recompiled main PS5 executable
+│       ├── image.bin                  <-- Translated AArch64 game code
+│       ├── longshot_env.txt           <-- Memory & performance switches (PS5 Fat / Pro profile)
+│       ├── longshot_options.ini       <-- In-game menu settings (created on first save)
+│       ├── user/                      <-- ★ YOUR GAME SAVES (ALWAYS BACK UP!)
+│       ├── fsr4/lite/                 <-- Optional AMD FSR 4.1.2 Lite INT8 shader weights
+│       ├── cache/ & radv-shader-cache/ <-- Auto-regenerated shader caches
+│       └── logs/crash_trace.txt       <-- Real-time O_SYNC watchdog & memory telemetry log
+└── longshotplus/roms/oot.nup          <-- ★ Your .nup dump (Title ID 0400486024DEC000)
+```
+
+---
+
+## Known Gameplay Advisories
+
+* **⚠️ Monster Coliseum:** Currently **not recommended** due to a compute shader (`prog_key=53fcaee4dc45c6ee`) causing GPU hangs after ~30 seconds on RDNA 2.
+* **Verified Areas:** Kokiri Forest, Hyrule Field, Lon Lon Ranch, Kakariko, Zora's Domain, Gerudo Valley, and Forest Temple.
+* **Memory Safety:** If free memory drops below `220 MiB`, a clean `MEMORY_FLOOR_EXIT` triggers to protect saves; simply relaunch from the home screen.
+
+---
+
+## What's New in `v0.3.1-plus`
+
+* **RDNA 2 / RADV Compute Atomic Hang Fix (`#2088`)**: Serializes subgroup floating-point atomic add loops.
+* **Dedicated ROM Scanner (`/data/longshotplus/roms/`)**: Auto-detects valid `.nup` files.
+* **FSR 3.1 Direct Output (`#2085`) & High-FPS Backflip (`#2071`)**: Saves ~1 ms/frame and fixes high-FPS takeoff height.
+* **4-Tier Base PS5 Memory Management**: Proactive `zone_boost`, ASTC lock, render target purging, and `MEMORY_FLOOR_EXIT`.
+* **Extended Compute Telemetry**: Unbuffered `O_SYNC` logs for `is_compute`, `prog_key`, `free_mem`, and `zone_boost`.
+* **Builder Enhancements (`#59`, `#62`, `#63`)**: CLI redirection, low-memory build mode, and PyQt6 fixes.
+
+---
 
 ## Project status
 
