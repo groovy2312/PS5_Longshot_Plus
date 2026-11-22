@@ -331,6 +331,7 @@ static Obj *obj_lookup_cached(uint64_t key, int kind, int entries) {
     return o;
 }
 /* (obj(), HOS_OBJ_CACHE: this thread's counts added up; the log line once 10 s have passed since the last) */
+static int obj_cache_due;
 __attribute__((unused)) static void obj_cache_flush(void) {
     __atomic_store_n(&obj_cache_due, 0, __ATOMIC_RELAXED);
     if (obj_cache_tl_made == 1) obj_cache_tl_made = 2, InterlockedIncrement64(&obj_cache_made);
