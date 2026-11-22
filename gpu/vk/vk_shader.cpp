@@ -906,7 +906,7 @@ void stage_handles(const NvnState& s, const Stage& st, uint32_t program, uint32_
         const uint64_t base = storage_base(table);
         if (!base || (base & 15)) return count;   // (the offsets are from the address rounded down to 16)
         const auto& d = st.info.storage_buffers_descriptors[table];
-        const uint64_t size = read_cbuf(d.cbuf_index, Shader::SimTurfStorageOrig(d) + 8);
+        const uint64_t size = read_cbuf(d.cbuf_index, d.cbuf_offset + 8);
         // (words 0 to 2 in one read, and only from a read that succeeded: a failed one gives zeros, which would pass for an
         // empty table and leave every element unbound)
         uint32_t header[3]{};

@@ -7501,8 +7501,16 @@ void draw(VkCommandBuffer cmd, NvnState& s, const DrawArgs& d) {
     if (cp->key == 0x02ff9920c2571cc2ULL) wheel_drawn_at.store(presents_now, std::memory_order_relaxed);
     __atomic_store_n(&g_last_draw_key, cp->key & ~(1ULL << 63), __ATOMIC_RELAXED);
     __atomic_store_n(&g_last_gfx_key, cp->key & ~(1ULL << 63), __ATOMIC_RELAXED);
-    uint64_t gfx_s0 = cp->ready.load(std::memory_order_acquire) ? cp->stages[0].code_key : 0ULL;
-    uint64_t gfx_s1 = cp->ready.load(std::memory_order_acquire) ? cp->stages[1].code_key : 0ULL;
+    uint64_t gfx_s0 = 0ULL, gfx_s1 = 0ULL;
+    if (s.has_prog) {
+        int idx = 0;
+        for (const Code& c : codes_of(s)) {
+            if (c.header_only) continue;
+            if (idx == 0) gfx_s0 = c.key;
+            else if (idx == 1) { gfx_s1 = c.key; break; }
+            idx++;
+        }
+    }
     __atomic_store_n(&g_last_stage0_key, gfx_s0, __ATOMIC_RELAXED);
     __atomic_store_n(&g_last_stage1_key, gfx_s1, __ATOMIC_RELAXED);
     __atomic_store_n(&g_last_gfx_stage0, gfx_s0, __ATOMIC_RELAXED);
