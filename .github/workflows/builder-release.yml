@@ -49,9 +49,9 @@ jobs:
             .local/projects
             .local/ps5-deps
             ps5/deps/PS5_Vulkan/.deps
-          key: kit-deps-v2-${{ hashFiles('ps5/builder/build_kit.sh', 'ps5/tools/build-ffmpeg.sh', 'ps5/tools/build-zstd.sh', '.gitmodules', 'ps5/deps/PS5_Vulkan') }}-${{ github.sha }}
+          key: kit-deps-v3-${{ hashFiles('ps5/builder/build_kit.sh', 'ps5/tools/build-ffmpeg.sh', 'ps5/tools/build-zstd.sh', '.gitmodules', 'ps5/deps/PS5_Vulkan') }}-${{ github.sha }}
           restore-keys: |
-            kit-deps-v2-${{ hashFiles('ps5/builder/build_kit.sh', 'ps5/tools/build-ffmpeg.sh', 'ps5/tools/build-zstd.sh', '.gitmodules', 'ps5/deps/PS5_Vulkan') }}-
+            kit-deps-v3-${{ hashFiles('ps5/builder/build_kit.sh', 'ps5/tools/build-ffmpeg.sh', 'ps5/tools/build-zstd.sh', '.gitmodules', 'ps5/deps/PS5_Vulkan') }}-
       - name: Build the kit
         run: bash ps5/builder/build_kit.sh
       - name: The logs, when it failed
