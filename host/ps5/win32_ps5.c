@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <pthread.h>
 #include <pthread_np.h>
 #include <signal.h>

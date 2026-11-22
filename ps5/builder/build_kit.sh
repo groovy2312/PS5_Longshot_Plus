@@ -19,7 +19,7 @@
 set -euo pipefail
 
 MESA_REV=0f86253f674c425052948eb3cb116c81e646a734
-SDK_REV=55a2de04e3364f0a6c8d6c337dc95436cf091ef0
+SDK_REV=b83202be73e930050e00de0f1b4d9ec46c0391bf
 MIHAWKGEN_REV=c57232a9f16bcb6df5fe07c9bb631518f2b1cc0e
 # (the headers gpu/vk is compiled with: scripts/linux/deps.sh's pins, which ps5/build.py names)
 VK_HEADERS=v1.4.345 SPIRV_HEADERS=vulkan-sdk-1.4.341.0 VMA=v3.3.0
