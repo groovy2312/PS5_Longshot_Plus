@@ -1,0 +1,82 @@
+name: "PS5 Hardware Test Report (Fat / Slim / Pro)"
+description: "Share stability results, FPS feedback, and crash_trace.txt telemetry from your PS5 console"
+title: "[PS5 Test] <Console Model> - <Area / Summary>"
+labels: ["tester-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing **PS5 Longshot Plus (`PPSA99198`)**!
+        Please fill in the details below so we can validate stability across **PS5 Fat, PS5 Slim, and PS5 Pro**.
+
+  - type: dropdown
+    id: console_model
+    attributes:
+      label: "PS5 Console Model"
+      description: "Which PS5 hardware model did you test on?"
+      options:
+        - "PS5 Fat (Base 12 GB)"
+        - "PS5 Slim (Base 12 GB)"
+        - "PS5 Pro (Expanded Memory)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: builder_profile
+    attributes:
+      label: "Builder Console Profile Used"
+      description: "Which profile did you select in PS5 Longshot Plus Builder?"
+      options:
+        - "PS5 / PS5 Slim (base - 512 texel limit)"
+        - "PS5 Pro (pro - 1024 texel limit)"
+    validations:
+      required: true
+
+  - type: input
+    id: build_version
+    attributes:
+      label: "Release / Build Version"
+      placeholder: "e.g., v0.3.1-plus"
+      value: "v0.3.1-plus"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: graphics_setup
+    attributes:
+      label: "Output Resolution & Upscaler"
+      options:
+        - "1920x1080 + AMD FSR 3.1"
+        - "1920x1080 + AMD FSR 4.1.2 (Lite)"
+        - "1280x720 + AMD FSR 3.1"
+        - "1280x720 + AMD FSR 4.1.2 (Lite)"
+        - "2560x1440 / 3840x2160 (PS5 Pro)"
+        - "Other (specify in notes)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: areas_tested
+    attributes:
+      label: "Areas / Dungeons Tested & Behavior"
+      description: "List the areas visited, zone transitions made, approximate FPS, and whether any freeze or MEMORY_FLOOR_EXIT occurred."
+      placeholder: |
+        - Areas visited: Kokiri Forest, Hyrule Field, Kakariko Village, Forest Temple...
+        - Zone transitions: ~10 transitions without issues
+        - Notes: Smooth gameplay, no GPU freezes
+    validations:
+      required: true
+
+  - type: textarea
+    id: crash_trace
+    attributes:
+      label: "crash_trace.txt Log (/data/homebrew/PPSA99198/logs/crash_trace.txt)"
+      description: "Paste the contents of logs/crash_trace.txt (or drag & drop the file here). Leave blank if the file is empty."
+      render: text
+
+  - type: textarea
+    id: env_overrides
+    attributes:
+      label: "Custom longshot_env.txt Changes (Optional)"
+      description: "If you modified any variables in longshot_env.txt (e.g., RX_VK_TEX_MAX_DIM), paste them here."
+      render: ini
