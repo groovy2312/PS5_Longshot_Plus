@@ -41,8 +41,8 @@ MODELS = {
         "attribute3": 0x140040,
         "env": {
             "RX_VK_COMPILE_SHADERS": "most",
-            "RX_VK_TEX_MAX_DIM": "256",
-            "RX_VK_TEX_SKIP_MB": "1",
+            "RX_VK_TEX_MAX_DIM": "512",
+            "RX_VK_TEX_SKIP_MB": "2",
             "RX_VK_WB_MAX_KB": "1024",
         },
     },
