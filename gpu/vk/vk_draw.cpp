@@ -10404,7 +10404,13 @@ void dispatch(VkCommandBuffer cmd, NvnState& s, uint32_t x, uint32_t y, uint32_t
             for (const char* q = skip; *q;) {
                 const char* e = q;
                 while (*e && *e != ',') e++;
-                if (e > q && !strncmp(hex, q, (size_t)(e - q))) return;
+                if (e > q && !strncmp(hex, q, (size_t)(e - q))) {
+                    static std::atomic<int> told{0};
+                    if (told++ < 16)
+                        logf("vk: dispatches of program %016llx left out (RX_VK_SKIP_PROG); its code:%s",
+                             (unsigned long long)cp->key, program_code_keys(s).c_str());
+                    return;
+                }
                 q = *e ? e + 1 : e;
             }
         }

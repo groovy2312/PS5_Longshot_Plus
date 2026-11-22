@@ -1,6 +1,6 @@
 # PS5 Longshot Plus (`PPSA99198`)
 
-**PlayStation 5 Native Port & Cross-Platform Builder (Windows & Linux) — `v0.3.1-plus`**
+**PlayStation 5 Native Port & Cross-Platform Builder (Windows & Linux) — `v0.3.2-plus`**
 
 > 🌐 **Language / Idioma:** **English (`README.md`)** · [Español (`README_ES.md` — Guía Completa en Español)](README_ES.md)
 
@@ -14,9 +14,9 @@
 
 ---
 
-## Critical Build & Installation Recommendations (`v0.3.1-plus`)
+## Critical Build & Installation Recommendations (`v0.3.2-plus`)
 
-* **PC Rebuild (`v0.3.1-plus`):** Compiling a fresh `PPSA99198` folder from scratch is highly recommended due to updated console executables (`eboot.bin` / `image.bin`), automatic Title ID `.nup` scanning, compute watchdog telemetry, and RDNA 2 subgroup atomic fixes (`#2088`).
+* **PC Rebuild (`v0.3.2-plus`):** Compiling a fresh `PPSA99198` folder from scratch is highly recommended due to updated console executables (`eboot.bin` / `image.bin`), automatic Title ID `.nup` scanning, compute watchdog telemetry, and RDNA 2 subgroup atomic fixes (`#2088`).
 * **PS5 Clean Installation:** Overwriting files works, but deleting legacy shader caches (`cache/` and `radv-shader-cache/`) is strongly advised to prevent stale pipelines.
 
 ---
@@ -62,8 +62,10 @@ Automatic ROM scanning verifies the official *Ocarina of Time* Title ID (`040048
 
 ---
 
-## What's New in `v0.3.1-plus`
+## What's New in `v0.3.2-plus`
 
+* **Real-Time Clock (`Show clock` — `Off` / `12h` / `24h`)**: New option in **Gameplay** displaying the local system time in the top-right corner of the internal menu bar and the in-game HUD (automatically padded above the FPS counter when both are top-right).
+* **Compute Dispatch `RX_VK_SKIP_CODE` & Stage Code Telemetry**: Extended `RX_VK_SKIP_CODE` (and `RX_VK_SKIP_PROG` stage code logging) to compute dispatches to isolate and diagnose RDNA 2 compute shader hangs (such as Monster Coliseum `prog_key=53fcaee4dc45c6ee`).
 * **RDNA 2 / RADV Compute Atomic Hang Fix (`#2088`)**: Serializes subgroup floating-point atomic add loops.
 * **Dedicated ROM Scanner (`/data/longshotplus/roms/`)**: Auto-detects valid `.nup` files.
 * **FSR 3.1 Direct Output (`#2085`) & High-FPS Backflip (`#2071`)**: Saves ~1 ms/frame and fixes high-FPS takeoff height.

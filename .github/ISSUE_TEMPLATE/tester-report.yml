@@ -36,8 +36,8 @@ body:
     id: build_version
     attributes:
       label: "Release / Build Version"
-      placeholder: "e.g., v0.3.1-plus"
-      value: "v0.3.1-plus"
+      placeholder: "e.g., v0.3.2-plus"
+      value: "v0.3.2-plus"
     validations:
       required: true
 

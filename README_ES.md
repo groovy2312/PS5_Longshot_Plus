@@ -1,6 +1,6 @@
 # PS5 Longshot Plus (`PPSA99198`) — Guía Oficial en Español
 
-**Port Nativo para PlayStation 5 y Builder Multiplataforma (Windows y Linux) — `v0.3.1-plus`**
+**Port Nativo para PlayStation 5 y Builder Multiplataforma (Windows y Linux) — `v0.3.2-plus`**
 
 > 🌐 **Idioma / Language:** [English (`README.md`)](README.md) · **Español (`README_ES.md`)**
 
@@ -16,10 +16,10 @@ Antes que nada, nuestro más sincero agradecimiento a:
 
 ---
 
-## Recomendaciones Críticas de Compilación e Instalación (`v0.3.1-plus`)
+## Recomendaciones Críticas de Compilación e Instalación (`v0.3.2-plus`)
 
 ### 1. En tu PC (Windows / Linux): Recompilar desde cero es ALTAMENTE RECOMENDADO (obligatorio para aplicar los cambios del núcleo)
-* Aunque el Builder permite actualizar compilaciones previas, para **`v0.3.1-plus`** es **altamente recomendado (prácticamente obligatorio) generar la carpeta `PPSA99198` completamente desde cero**.
+* Aunque el Builder permite actualizar compilaciones previas, para **`v0.3.2-plus`** es **altamente recomendado (prácticamente obligatorio) generar la carpeta `PPSA99198` completamente desde cero**.
 * **Por qué:** Esta versión actualiza el binario principal (`eboot.bin` / `image.bin`), incorpora el nuevo escáner automático de ROMs por *Title ID* en `/data/longshotplus/roms/`, añade el *watchdog* de telemetría de cómputo (`is_compute`) y aplica las correcciones atómicas de RDNA 2 (`#2088`).
 * **Cómo hacerlo:** Antes de pulsar **Build**, elimina o elige una carpeta de salida nueva para que no reutilice archivos intermedios viejos de `longshot-ps5-work`.
 
@@ -48,7 +48,7 @@ Todo tu progreso, perfiles, capturas de guardado y ajustes del juego se almacena
 
 ## Detección Automática del Archivo `.nup` y Estructura de Carpetas en PS5
 
-En **`v0.3.1-plus`**, el juego ya **no depende de un único nombre de archivo fijo**: al arrancar, escanea automáticamente las carpetas compatibles en orden de prioridad y lee la cabecera de cada archivo `.nup` hasta verificar el *Title ID* oficial de *Ocarina of Time* (`0400486024DEC000`).
+En **`v0.3.2-plus`**, el juego ya **no depende de un único nombre de archivo fijo**: al arrancar, escanea automáticamente las carpetas compatibles en orden de prioridad y lee la cabecera de cada archivo `.nup` hasta verificar el *Title ID* oficial de *Ocarina of Time* (`0400486024DEC000`).
 
 ### Orden de búsqueda automática en la PS5
 1. **`/data/longshotplus/roms/`** *(Ruta principal recomendada — acepta cualquier nombre terminado en `.nup`, por ejemplo `oot.nup` o `zelda_oot.nup`)*
@@ -92,8 +92,10 @@ En **`v0.3.1-plus`**, el juego ya **no depende de un único nombre de archivo fi
 
 ---
 
-## Resumen de Novedades Técnicas en `v0.3.1-plus`
+## Resumen de Novedades Técnicas en `v0.3.2-plus`
 
+* **Reloj en Tiempo Real (`Show clock` — `Off` / `12h` / `24h`)**: Nuevo selector en **Gameplay** que muestra la hora local del sistema en la esquina derecha de la barra superior del menú interno y en la esquina superior derecha del HUD (con separación automática respecto al contador de FPS).
+* **Soporte de `RX_VK_SKIP_CODE` en Compute Dispatches y Telemetría de `code_key`**: Extensión de `RX_VK_SKIP_CODE` (y registro de `its code:` en `RX_VK_SKIP_PROG`) para *compute dispatches*, permitiendo diagnosticar y aislar shaders de cómputo problemáticos en RDNA 2 (como `prog_key=53fcaee4dc45c6ee` en el Coliseo de los Monstruos).
 * **Corrección de cuelgues atómicos de cómputo RDNA 2 / RADV (`#2088`):** Serializa los bucles atómicos de punto flotante por subgrupo mediante `OpGroupNonUniformElect` (`SubgroupCasLoop`), eliminando cuelgues de GPU de 2 segundos en pases de iluminación de templos.
 * **Escáner dedicado de ROMs (`/data/longshotplus/roms/`) y validación de Title ID (`ps5_is_oot_nup`):** Detecta automáticamente cualquier `.nup` válido (`0400486024DEC000`) en `/data/longshotplus/roms/` o rutas alternativas.
 * **Salida directa FSR 3.1 (`#2085`) y salto hacia atrás a alto FPS (`#2071`):** Ahorra ~1 ms por fotograma en FSR 3.1 y corrige la altura del *backflip* por encima de 60 FPS (`HOS_FPS_TAKEOFF`).
