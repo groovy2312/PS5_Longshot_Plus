@@ -479,6 +479,45 @@ Id CasLoop(EmitContext& ctx, Operation operation, Id array_pointer, Id element_p
     return func;
 }
 
+// Admit one active invocation per subgroup to the CAS loop at a time. Each invocation
+// still adds its own value and receives its own old value, including on overflow.
+Id SubgroupCasLoop(EmitContext& ctx, Id cas_func, Id array_pointer) {
+    const Id subgroup{ctx.Const(static_cast<u32>(spv::Scope::Subgroup))};
+    const Id func_type{ctx.TypeFunction(ctx.F32[1], ctx.U32[1], ctx.F32[1], array_pointer)};
+    const Id func{ctx.OpFunction(ctx.F32[1], spv::FunctionControlMask::MaskNone, func_type)};
+    const Id index{ctx.OpFunctionParameter(ctx.U32[1])};
+    const Id value{ctx.OpFunctionParameter(ctx.F32[1])};
+    const Id base{ctx.OpFunctionParameter(array_pointer)};
+    ctx.AddLabel();
+    const Id result{ctx.AddLocalVariable(ctx.TypePointer(spv::StorageClass::Function, ctx.F32[1]),
+                                         spv::StorageClass::Function)};
+    const Id header{ctx.OpLabel()};
+    const Id selected{ctx.OpLabel()};
+    const Id selection_end{ctx.OpLabel()};
+    const Id next{ctx.OpLabel()};
+    const Id merge{ctx.OpLabel()};
+    ctx.OpBranch(header);
+    ctx.AddLabel(header);
+    ctx.OpLoopMerge(merge, next, spv::LoopControlMask::MaskNone);
+    const Id elect_block{ctx.OpLabel()};
+    ctx.OpBranch(elect_block);
+    ctx.AddLabel(elect_block);
+    const Id elected{ctx.OpGroupNonUniformElect(ctx.U1, subgroup)};
+    ctx.OpSelectionMerge(selection_end, spv::SelectionControlMask::MaskNone);
+    ctx.OpBranchConditional(elected, selected, selection_end);
+    ctx.AddLabel(selected);
+    ctx.OpStore(result, ctx.OpFunctionCall(ctx.F32[1], cas_func, index, value, base));
+    ctx.OpBranch(selection_end);
+    ctx.AddLabel(selection_end);
+    ctx.OpBranch(next);
+    ctx.AddLabel(next);
+    ctx.OpBranchConditional(elected, merge, header);
+    ctx.AddLabel(merge);
+    ctx.OpReturnValue(ctx.OpLoad(ctx.F32[1], result));
+    ctx.OpFunctionEnd();
+    return func;
+}
+
 template <typename Desc>
 std::string NameOf(Stage stage, const Desc& desc, std::string_view prefix) {
     if (desc.count > 1) {
@@ -1969,6 +2008,11 @@ void EmitContext::DefineStorageBuffers(const Info& info, u32& binding) {
     if (info.uses_atomic_f32_add && !native_f32_add) {
         f32_add_cas = CasLoop(*this, Operation::FPAdd, storage_types.U32.array,
                               storage_types.U32.element, F32[1], spv::Scope::Device);
+        if (stage == Stage::Compute && !mesh_fallback && profile.supported_spirv >= 0x00010300 &&
+            profile.SupportsSubgroupStage(stage)) {
+            AddCapability(spv::Capability::GroupNonUniform);
+            f32_add_cas = SubgroupCasLoop(*this, f32_add_cas, storage_types.U32.array);
+        }
     }
     if (info.uses_atomic_f16x2_add) {
         f16x2_add_cas = CasLoop(*this, Operation::FPAdd, storage_types.U32.array,
