@@ -33,6 +33,7 @@ import lift_fixes
 import entry_hooks
 import suyu_rt_fixes
 import fastvec
+import cmpflags   # (longshot) a subtraction's V as N xor (a < b), so signed compares fold to one (A64_SUB_V): wraps translate
 import fpxkeep
 import chunks
 import compact_bodies
@@ -52,6 +53,7 @@ lift_fixes.install()
 entry_hooks.install()   # (host/*.c's ENTRY_HOOK_SYM hooks at the entry of their SDK functions: add() below)
 suyu_rt_fixes.install()
 fastvec.install()
+cmpflags.install()   # (around that translate: text only, after the forms are chosen)
 fpxkeep.install()
 compact_bodies.install()   # (after insn's classify: the bodies as runs, nx2/compact_bodies.py)
 
