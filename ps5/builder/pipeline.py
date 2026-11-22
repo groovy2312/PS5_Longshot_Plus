@@ -52,6 +52,9 @@ MODELS = {
         "env": {
             "RX_VK_COMPILE_SHADERS": "most",
             "RX_VK_WB_MAX_KB": "1024",
+            "HOS_PS5_RENDER_MB": "3584",
+            "HOS_PS5_TEX_RESERVE_MB": "1600",
+            "RX_VK_EVICT_MIN_UNUSED": "60",
         },
     },
 }

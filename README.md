@@ -66,6 +66,7 @@ Automatic ROM scanning verifies the official *Ocarina of Time* Title ID (`040048
 
 * **Real-Time Clock (`Show clock` — `Off` / `12h` / `24h`)**: New option in **Gameplay** displaying the local system time in the top-right corner of the internal menu bar and the in-game HUD (automatically padded above the FPS counter when both are top-right).
 * **Compute Dispatch `RX_VK_SKIP_CODE` & Stage Code Telemetry**: Extended `RX_VK_SKIP_CODE` (and `RX_VK_SKIP_PROG` stage code logging) to compute dispatches to isolate and diagnose RDNA 2 compute shader hangs (such as Monster Coliseum `prog_key=53fcaee4dc45c6ee`).
+* **Enhanced PS5 Pro Profile (`13.2 GiB` Direct Memory)**: Expanded PS5 Pro builder profile (`HOS_PS5_RENDER_MB=3584`, `HOS_PS5_TEX_RESERVE_MB=1600`, `RX_VK_EVICT_MIN_UNUSED=60`) for 3.5 GiB renderer budget and sustained 1024-texel texture retention without affecting base PS5 / PS5 Slim stability.
 * **RDNA 2 / RADV Compute Atomic Hang Fix (`#2088`)**: Serializes subgroup floating-point atomic add loops.
 * **Dedicated ROM Scanner (`/data/longshotplus/roms/`)**: Auto-detects valid `.nup` files.
 * **FSR 3.1 Direct Output (`#2085`) & High-FPS Backflip (`#2071`)**: Saves ~1 ms/frame and fixes high-FPS takeoff height.
