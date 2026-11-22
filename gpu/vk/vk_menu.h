@@ -72,6 +72,7 @@ struct Options {
     int fps_version_always = 0;   // (longshot) the version and the hardware lines at every level of the counter, not only at Dev
     // (longshot) which of the Dev level's lines show: fps_stats.h's DevLine order, then the CPU, GPU and driver lines; all by default
     int fps_dev_show[12] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    int show_clock = 0;   // (ps5-longshot-plus) real-time clock: 0 Off, 1 12h, 2 24h
     int menu_shortcut = 2;   // 0 Insert or F1, 1 F1 only, 2 Insert, F1 or Esc (F1 always opens the menu). 2 by default, as a PC
                              // game's pause menu; an older file's 0, the default it then was, moves to 2 (options_version 5)
     int compact_menu_key = 0; // 0 Right Shift, 1 Right Ctrl (key to switch to or open the compact menu)

@@ -151,6 +151,28 @@ const char* tx_framegen(int v) {
 const char* tx_onoff(int v) { return v ? "On" : "Off"; }
 const char* tx_fps_level(int v) { return fps_stats::level_name(v); }
 const char* tx_fps_corner(int v) { return fps_stats::corner_name(v); }
+const char* tx_show_clock(int v) {
+    static const char* const names[] = {"Off", "12h", "24h"};
+    return names[std::clamp(v, 0, 2)];
+}
+bool format_clock_now(int mode, char* out, size_t cap) {
+    if (mode <= 0 || !out || cap == 0) return false;
+    const time_t now = time(nullptr);
+    tm t{};
+#ifdef _WIN32
+    if (localtime_s(&t, &now) != 0) return false;
+#else
+    if (!localtime_r(&now, &t)) return false;
+#endif
+    if (mode == 1) {
+        int hr = t.tm_hour % 12;
+        if (hr == 0) hr = 12;
+        snprintf(out, cap, "%d:%02d %s", hr, t.tm_min, t.tm_hour >= 12 ? "PM" : "AM");
+    } else {
+        snprintf(out, cap, "%02d:%02d", t.tm_hour, t.tm_min);
+    }
+    return true;
+}
 const char* tx_fps_size(int v) {   // (the FPS counter size row: Auto, then the Menu size row's names)
     static const char* t[] = {"Auto", "Small", "Medium", "Large"};
     return v >= 0 && v <= 3 ? t[v] : t[0];
@@ -1581,6 +1603,8 @@ Row rows[] = {
     {TAB_GAMEPLAY, "FPS counter size", &opts.fps_size, 0, 3, 1, tx_fps_size,
      "How large the FPS counter is drawn. Auto grows with the window, as the menu does; Small, Medium and Large keep one size "
      "whatever the window, the size Auto has in a 720p, 1080p and 1440p window.", nullptr, false, true},
+    {TAB_GAMEPLAY, "Show clock", &opts.show_clock, 0, 2, 1, tx_show_clock,
+     "Show the current system time in the top-right corner of the HUD and the internal menu bar.", nullptr, false, true},
     {TAB_GAMEPLAY, "FPS counter details", nullptr, 0, 0, 0, nullptr,   // (longshot: opens its page, the TAB_FPS_DEV rows)
      "Which lines the FPS counter's Dev level shows, and whether the version and hardware show at every level."},
     // (longshot) the FPS counter details page: the version at every level, then each of the Dev level's lines (opts.fps_dev_show:
@@ -3809,6 +3833,11 @@ void draw_options(ui::Ctx& c) {
         const float fit = ui::fit_px(px, opts.menu_size == 3 ? px : kVersionMinPt * s, 0.5f * s, room, width);
         if (fit > 0) ui::text_mid(c, c.f.body, fit, c.safe, ty, ui::kBannerInk, ver.c_str());
     }
+    if (opts.show_clock > 0) {
+        char clk[24];
+        if (format_clock_now(opts.show_clock, clk, sizeof clk))
+            ui::text_mid_right(c, c.f.strong, 17 * s, c.w - c.safe, ty, ui::kBannerInk, clk);
+    }
     // the rows, in the column; the help beside it
     float cx0, cx1, hx0, hx1;
     bool narrow;
@@ -4637,7 +4666,8 @@ void draw_fps(ui::Ctx& c, bool under_banner) {
     const int foot = (footer ? 1 : 0) + (hw_lines ? 3 : 0);
     if (foot) h += 6 * s + foot * lh;
     const float edge = left ? c.safe : c.w - c.safe;
-    const float top = bottom ? c.h - c.safe - h : under_banner && !tune_mode && page != 5 && !beside ? banner_h(c) + 10 * s : c.safe;
+    const float clock_pad = (!bottom && !left && !under_banner && opts.show_clock > 0) ? 24 * s : 0.0f;
+    const float top = bottom ? c.h - c.safe - h : under_banner && !tune_mode && page != 5 && !beside ? banner_h(c) + 10 * s : c.safe + clock_pad;
     // (x for a width at the column's edge)
     const auto at = [&](float w) { return left ? edge : edge - w; };
     // (the number's colour: at FPS the classic green whatever the rate, the counter as it always was (#1957); from Frame time on
@@ -6431,11 +6461,22 @@ void menu_tick() {
     }
 }
 
+void draw_clock(ui::Ctx& c) {
+    char clk[24];
+    if (!format_clock_now(opts.show_clock, clk, sizeof clk)) return;
+    const float s = fps_scale(c), pt = 18 * s;
+    const ImVec2 sz = ui::size_of(c.f.strong, pt, clk);
+    const float x = c.w - c.safe - sz.x, y = c.safe;
+    ui::text(c, c.f.strong, pt, ImVec2(x + 1.5f * s, y + 1.5f * s), ui::rgba(0, 0, 0, 180), clk);
+    ui::text(c, c.f.strong, pt, ImVec2(x, y), ui::kInkBright, clk);
+}
+
 void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
     const bool start = startup_on.load(std::memory_order_acquire);
     const bool fps = opts.show_fps && !start;   // (no game frames yet: not "0 FPS" over the start-up screen)
+    const bool clk = opts.show_clock > 0 && !start;
     const bool open = open_now.load(std::memory_order_relaxed);
-    if (!start && !fps && !open) {   // (nothing shows: no ImGui frame, no render pass)
+    if (!start && !fps && !clk && !open) {   // (nothing shows: no ImGui frame, no render pass)
         // (but a new window size or Menu size since the last bake: one frame with nothing drawn that bakes the menu's glyphs
         // and measures its page for the new size, so the next open has no hitch whatever was resized while nothing showed)
         if (prebake_needed(w, h) && ui::begin(w, h)) {
@@ -6459,6 +6500,7 @@ void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
     prebake(c);   // (the menu's glyphs at this size, before it opens: no hitch then)
     if (start) draw_startup(c);   // (under the menu)
     if (open) draw_menu(c);
+    if (clk && !open) draw_clock(c);
     if (fps) draw_fps(c, open);
     ::mkwvk::rec::boundary(::mkwvk::rec::B_DIRECT);   // (Dear ImGui records into cmd directly, its backend through its own pointers: what this thread recorded through vk_work.h reaches cmd first)
     ui::record(cmd, index, w, h);
@@ -6466,11 +6508,14 @@ void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
 
 void menu_record_image(VkCommandBuffer cmd, VkImage image, VkImageView view, uint32_t w, uint32_t h) {
     const bool open = open_now.load(std::memory_order_relaxed);
-    const bool fps = opts.show_fps && !startup_on.load(std::memory_order_acquire);
-    if (!open && !fps) return;
+    const bool start = startup_on.load(std::memory_order_acquire);
+    const bool fps = opts.show_fps && !start;
+    const bool clk = opts.show_clock > 0 && !start;
+    if (!open && !fps && !clk) return;
     if (!ui::begin(w, h)) return;
     ui::Ctx c = ui_ctx(w, h);
     if (open) draw_menu(c);
+    if (clk && !open) draw_clock(c);
     if (fps) draw_fps(c, open);
     ::mkwvk::rec::boundary(::mkwvk::rec::B_DIRECT);   // (Dear ImGui records into cmd directly, its backend through its own pointers: what this thread recorded through vk_work.h reaches cmd first)
     ui::record_to(cmd, image, view, w, h);
