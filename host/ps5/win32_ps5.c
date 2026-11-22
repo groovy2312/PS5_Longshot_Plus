@@ -1260,13 +1260,16 @@ static void ps5_write_crash_trace(const char *reason, uint64_t room_mb) {
     uint64_t raw_key = __atomic_load_n(&g_last_draw_key, __ATOMIC_RELAXED);
     int is_comp = (raw_key >> 63) ? 1 : 0;
     uint64_t pkey = raw_key & ~(1ULL << 63);
-    uint64_t st0 = __atomic_load_n(&g_last_stage0_key, __ATOMIC_RELAXED);
-    uint64_t st1 = __atomic_load_n(&g_last_stage1_key, __ATOMIC_RELAXED);
+    uint64_t gfx_key = __atomic_load_n(&g_last_gfx_key, __ATOMIC_RELAXED);
+    uint64_t gfx_s0 = __atomic_load_n(&g_last_gfx_stage0, __ATOMIC_RELAXED);
+    uint64_t gfx_s1 = __atomic_load_n(&g_last_gfx_stage1, __ATOMIC_RELAXED);
+    uint64_t cs_key = __atomic_load_n(&g_last_cs_key, __ATOMIC_RELAXED);
     int64_t pres = __atomic_load_n(&g_last_present_seen, __ATOMIC_RELAXED);
     int n = snprintf(buf, sizeof buf,
-        "[PS5-TRACE] %s | present=%lld | free_mem=%llu MiB | zone_boost=%d | is_compute=%d | prog_key=%016llx | stage0=%016llx | stage1=%016llx\n",
+        "[PS5-TRACE] %s | present=%lld | free_mem=%llu MiB | zone_boost=%d | last_gfx=%016llx (s0=%016llx, s1=%016llx) | last_cs=%016llx | is_compute=%d | prog_key=%016llx\n",
         reason, (long long)pres, (unsigned long long)room_mb, zone_boost_active(),
-        is_comp, (unsigned long long)pkey, (unsigned long long)st0, (unsigned long long)st1);
+        (unsigned long long)gfx_key, (unsigned long long)gfx_s0, (unsigned long long)gfx_s1,
+        (unsigned long long)cs_key, is_comp, (unsigned long long)pkey);
     if (n > 0) {
         int fd = open("/data/homebrew/PPSA99198/logs/crash_trace.txt", O_WRONLY | O_CREAT | O_APPEND | O_SYNC, 0666);
         if (fd < 0) fd = open("/data/longshot/PPSA99198/logs/crash_trace.txt", O_WRONLY | O_CREAT | O_APPEND | O_SYNC, 0666);
