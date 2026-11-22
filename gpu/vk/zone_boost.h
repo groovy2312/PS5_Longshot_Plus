@@ -15,6 +15,8 @@ static inline uint64_t zone_now_ms(void) {
 
 __attribute__((weak)) volatile uint64_t g_zone_boost_until_ms = 0;
 __attribute__((weak)) volatile uint64_t g_last_draw_key = 0;
+__attribute__((weak)) volatile uint64_t g_last_stage0_key = 0;
+__attribute__((weak)) volatile uint64_t g_last_stage1_key = 0;
 __attribute__((weak)) volatile int64_t  g_last_present_seen = 0;
 __attribute__((weak)) volatile uint64_t g_ps5_free_mem_mb = 0;
 __attribute__((weak)) volatile int      g_zone_boost_mem_hold = 0;
