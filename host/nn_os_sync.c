@@ -299,6 +299,7 @@ typedef struct { uint64_t key; Obj *o; } ObjCacheEntry;
 static _Thread_local uint64_t obj_cache_tl_looks, obj_cache_tl_misses;
 static _Thread_local int obj_cache_tl_made;   /* (1: made, not counted yet; 2: counted) */
 static int obj_cache_size_logged;
+static int obj_cache_due;
 static volatile LONG64 obj_cache_looks, obj_cache_misses, obj_cache_made, obj_cache_logged_ns;
 static Obj *obj_lookup_cached(uint64_t key, int kind, int entries) {
     static _Thread_local ObjCacheEntry *cache;   /* (sets of four, each set 64-byte aligned) */
@@ -331,7 +332,6 @@ static Obj *obj_lookup_cached(uint64_t key, int kind, int entries) {
     return o;
 }
 /* (obj(), HOS_OBJ_CACHE: this thread's counts added up; the log line once 10 s have passed since the last) */
-static int obj_cache_due;
 __attribute__((unused)) static void obj_cache_flush(void) {
     __atomic_store_n(&obj_cache_due, 0, __ATOMIC_RELAXED);
     if (obj_cache_tl_made == 1) obj_cache_tl_made = 2, InterlockedIncrement64(&obj_cache_made);
