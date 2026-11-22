@@ -813,15 +813,41 @@ __attribute__((constructor)) void hos_ps5_clock_init(void) {
 /* The game's package on the console: HOS_PS5_NUP, else the copy an emulator there already keeps, so one 25 GB file serves
    both: EglantinePS5's folder (under the name its dump has), PS5_Lichii's, then the one that had before 2026-11-10 (when
    none is there, the first, for the message). */
+static int ps5_find_any_nup_in_dir(const char *dir, char *out, size_t out_sz) {
+    DIR *d = opendir(dir);
+    if (!d) return 0;
+    struct dirent *de;
+    while ((de = readdir(d)) != NULL) {
+        const char *name = de->d_name;
+        if (name[0] == '.') continue;
+        size_t len = strlen(name);
+        if (len > 4 && strcasecmp(name + len - 4, ".nup") == 0) {
+            int n = snprintf(out, out_sz, "%s/%s", dir, name);
+            if (n > 0 && (size_t)n < out_sz && access(out, R_OK) == 0) {
+                closedir(d);
+                return 1;
+            }
+        }
+    }
+    closedir(d);
+    return 0;
+}
 const char *hos_ps5_nup(void) {
+    static char discovered[PATH_MAX];
+    static const char *const scan_dirs[] = {
+        "/data/longshotplus/roms",
+        "/data/longshot/roms",
+        "/data/eglantineps5/roms"
+    };
     static const char *const places[] = {
-        "/data/longshotplus/roms/The Legend of Zelda Ocarina of Time [0400486024dec000][v131072].nup",
         "/data/longshotplus/roms/oot.nup",
         "/data/longshot/roms/oot.nup",
         "/data/eglantineps5/roms/The Legend of Zelda Ocarina of Time [0400486024dec000][v131072].nup",
         "/data/eglantineps5/roms/oot.nup", "/data/lichii/roms/oot/oot.nup", "/data/prosperoeden/roms/oot/oot.nup"};
     const char *set = getenv("HOS_PS5_NUP");
     if (set && *set) return set;
+    for (size_t i = 0; i < sizeof scan_dirs / sizeof *scan_dirs; i++)
+        if (ps5_find_any_nup_in_dir(scan_dirs[i], discovered, sizeof discovered)) return discovered;
     for (size_t i = 0; i < sizeof places / sizeof *places; i++)
         if (access(places[i], R_OK) == 0) return places[i];
     return places[0];
