@@ -164,9 +164,9 @@ share it.**
 1. Copy the whole **`PPSA99198`** folder to **`/data/homebrew/`** on the console, so that it is
    `/data/homebrew/PPSA99198`. Either type the console's address in the builder and press **Send to PS5**, or copy it
    with any FTP program.
-2. Copy your game file to the console as **`/data/eglantineps5/roms/oot.nup`** (make the folders if they are not
-   there). It is 25 GB: this is the long copy. A file already there for another program, under
-   `/data/lichii/roms/oot/oot.nup`, is found too.
+2. Copy your game file to the console as **`/data/longshotplus/roms/oot.nup`** (make the folders if they are not
+   there). It is 25 GB: this is the long copy. Existing files under `/data/longshot/roms/oot.nup`,
+   `/data/eglantineps5/roms/oot.nup`, or `/data/lichii/roms/oot/oot.nup` are also detected automatically.
 3. Start **Longshot** from the console's home screen, or from your homebrew launcher.
 
 The first visit to each place stutters while its shaders are made; they are kept, and later visits are smooth.

@@ -59,7 +59,7 @@ Builds the PlayStation 5 title folder of PS5 Longshot Plus from your own copy of
    The build takes 40 to 70 minutes and 6 GB of disk. On a computer with little memory free, set Memory to use
    (2 GB at the least): the build keeps within it, more slowly.
 3. Copy the folder it makes (PPSA99198) to /data/homebrew on the console, or send it from the window over FTP.
-   Your game file goes to /data/eglantineps5/roms on the console.
+   Your game file goes to /data/longshotplus/roms on the console.
 
 The folder it makes comes from your game: never share it. This builder holds no game files.
 What the builder is made of, and the licences: kit/NOTICE.md and LICENSE.

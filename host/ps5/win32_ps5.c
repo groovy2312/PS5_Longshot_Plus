@@ -815,6 +815,9 @@ __attribute__((constructor)) void hos_ps5_clock_init(void) {
    none is there, the first, for the message). */
 const char *hos_ps5_nup(void) {
     static const char *const places[] = {
+        "/data/longshotplus/roms/The Legend of Zelda Ocarina of Time [0400486024dec000][v131072].nup",
+        "/data/longshotplus/roms/oot.nup",
+        "/data/longshot/roms/oot.nup",
         "/data/eglantineps5/roms/The Legend of Zelda Ocarina of Time [0400486024dec000][v131072].nup",
         "/data/eglantineps5/roms/oot.nup", "/data/lichii/roms/oot/oot.nup", "/data/prosperoeden/roms/oot/oot.nup"};
     const char *set = getenv("HOS_PS5_NUP");

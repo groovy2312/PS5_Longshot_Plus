@@ -258,7 +258,7 @@ class Window(QWidget):
         send_row.addWidget(self.send)
         self.send_note = QLabel("When the build is done: copy the title folder to <b>/data/homebrew</b> on the console yourself, "
                                 "or send it from here with the console's FTP server running. Your game file goes to "
-                                "<b>/data/eglantineps5/roms</b> on the console.")
+                                "<b>/data/longshotplus/roms</b> on the console.")
         self.send_note.setWordWrap(True)
         self.send_note.setTextFormat(Qt.TextFormat.RichText)
 

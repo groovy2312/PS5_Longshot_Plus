@@ -80,7 +80,7 @@ VMA `v3.3.0`.
 - `host/posix/win32_posix.c`: a new thread takes the process's affinity through `scePthreadSetaffinity`.
 - `host/ps5/win32_ps5.h`: a small `std::atomic_ref`, which the SDK's C++ library lacks and Longshot's back end uses.
 - `host/ps5/hos_sdl_ps5.c`: stand-ins for the calls `hos_sdl.h` gained (text input, clipboard, Steam pads).
-- The game is looked for in `/data/eglantineps5/roms` first, under the name the dump has.
+- The game is looked for in `/data/longshotplus/roms` first (with `/data/longshot/roms`, `/data/eglantineps5/roms`, and `/data/lichii/roms/oot` as automatic fallbacks), under the name the dump has.
 
 ## Building
 
@@ -122,7 +122,7 @@ SCE_SYSTEM_PARAM_LANG numbers: 1 English (US), 17 Portuguese (Brazil), 12 Finnis
 | ps5debug-NG | port `744` |
 | klogsrv (kernel log) | port `3232` |
 | ELF loader | port `9021` |
-| Game | `/data/eglantineps5/roms/`, The Legend of Zelda: Ocarina of Time as a `.nup` (program `0400486024DEC000`, update v131072) |
+| Game | `/data/longshotplus/roms/`, The Legend of Zelda: Ocarina of Time as a `.nup` (program `0400486024DEC000`, update v131072) |
 
 On 2026-11-15 only the ELF loader answered: FTP, ps5debug-NG and klogsrv have to be loaded before a test run.
 
