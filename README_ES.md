@@ -97,6 +97,7 @@ En **`v0.3.2-plus`**, el juego ya **no depende de un único nombre de archivo fi
 * **Reloj en Tiempo Real (`Show clock` — `Off` / `12h` / `24h`)**: Nuevo selector en **Gameplay** que muestra la hora local del sistema en la esquina derecha de la barra superior del menú interno y en la esquina superior derecha del HUD (con separación automática respecto al contador de FPS).
 * **Soporte de `RX_VK_SKIP_CODE` en Compute Dispatches y Telemetría de `code_key`**: Extensión de `RX_VK_SKIP_CODE` (y registro de `its code:` en `RX_VK_SKIP_PROG`) para *compute dispatches*, permitiendo diagnosticar y aislar shaders de cómputo problemáticos en RDNA 2 (como `prog_key=53fcaee4dc45c6ee` en el Coliseo de los Monstruos).
 * **Perfil Mejorado para PS5 Pro (`13.2 GiB` de memoria directa)**: Presupuesto de renderizador ampliado a 3.5 GiB (`HOS_PS5_RENDER_MB=3584`), reserva de texturas ajustada (`HOS_PS5_TEX_RESERVE_MB=1600`) y mayor retención de texturas a 1024 texels (`RX_VK_EVICT_MIN_UNUSED=60`) sin afectar la estabilidad de PS5 Fat / Slim.
+* **Plegado de Comparaciones con Signo en CPU (`A64_SUB_V`, `#1871`)**: Simplifica ~170,000 comparaciones con signo del código recompilado a una sola instrucción de CPU x86-64, reduciendo la carga del procesador y el tamaño de `image.bin` en PS5.
 
 ### Comparativa de Perfiles: PS5 Fat / Slim vs PS5 Pro (`v0.3.2-plus`)
 
