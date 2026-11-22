@@ -829,3 +829,18 @@ By default, **PS5 Longshot Plus** runs safely with **AMD FSR 3.1**. To unlock **
 * **Recommended Stability Setting (Zero-Crash Long Sessions):** For players on **PS5 Fat / Slim** who want extended play sessions without sudden memory exits when repeatedly entering and exiting open areas (such as Hyrule Field, Kakariko Village, or Castle Town), open the in-game menu (**Touchpad Click + Options → Graphics**) and set **Output resolution** to **`1280x720`** with **`Built-in` (`FG integrada`)** frame generation—or tune the resolution scale to match your console model (**PS5 Fat/Slim** vs **PS5 Pro**).
 * **Console Model Selection:** The Builder includes dedicated profiles for both **PS5 / PS5 Slim** (12 GB unified memory, 512-texel limit) and **PS5 Pro** (expanded memory mode, 1024-texel limit).
 
+### PS5 Fat / Slim vs PS5 Pro Profile Comparison (`v0.3.2-plus`)
+
+| Feature / Parameter | PS5 Fat / Slim (`base`) | PS5 Pro (`pro`) |
+| :--- | :--- | :--- |
+| **Kernel Profile (`attribute3`)** | `0x140040` (Base mode) | `0x8540040` (High CPU Frequency) |
+| **Available Direct Memory** | `12,016 MiB` (~11.7 GiB) | `13,232 MiB` (~12.9 GiB) |
+| **Max Texture Resolution (`RX_VK_TEX_MAX_DIM`)** | `512` texels | `1024` texels (Full native) |
+| **Mipmap Skip Threshold (`RX_VK_TEX_SKIP_MB`)** | `2 MiB` | `64 MiB` (Default, no aggressive trim) |
+| **Renderer Budget (`HOS_PS5_RENDER_MB`)** | `2,560 MiB` (2.5 GiB) | `3,584 MiB` (3.5 GiB) |
+| **Free Game Reserve (`HOS_PS5_TEX_RESERVE_MB`)** | `2,200 MiB` | `1,600 MiB` |
+| **Texture/Target Retention (`RX_VK_EVICT_MIN_UNUSED`)** | `30` presents | `60` presents |
+| **Estimated Performance (Kokiri Forest 1080p + FG 2x)** | ~45 FPS shown | ~63–68 FPS shown |
+| **Recommended Output Resolution** | `1920x1080` (or `1280x720` for long sessions) | `1920x1080` / `2560x1440` / `3840x2160` |
+| **Default Upscaler & Frame Generation** | AMD FSR 3.1 (or FSR 4.1.2 Lite) + Built-in FG 2x | AMD FSR 3.1 (or FSR 4.1.2 Lite) + Built-in FG 2x |
+
