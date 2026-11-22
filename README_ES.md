@@ -97,6 +97,21 @@ En **`v0.3.2-plus`**, el juego ya **no depende de un único nombre de archivo fi
 * **Reloj en Tiempo Real (`Show clock` — `Off` / `12h` / `24h`)**: Nuevo selector en **Gameplay** que muestra la hora local del sistema en la esquina derecha de la barra superior del menú interno y en la esquina superior derecha del HUD (con separación automática respecto al contador de FPS).
 * **Soporte de `RX_VK_SKIP_CODE` en Compute Dispatches y Telemetría de `code_key`**: Extensión de `RX_VK_SKIP_CODE` (y registro de `its code:` en `RX_VK_SKIP_PROG`) para *compute dispatches*, permitiendo diagnosticar y aislar shaders de cómputo problemáticos en RDNA 2 (como `prog_key=53fcaee4dc45c6ee` en el Coliseo de los Monstruos).
 * **Perfil Mejorado para PS5 Pro (`13.2 GiB` de memoria directa)**: Presupuesto de renderizador ampliado a 3.5 GiB (`HOS_PS5_RENDER_MB=3584`), reserva de texturas ajustada (`HOS_PS5_TEX_RESERVE_MB=1600`) y mayor retención de texturas a 1024 texels (`RX_VK_EVICT_MIN_UNUSED=60`) sin afectar la estabilidad de PS5 Fat / Slim.
+
+### Comparativa de Perfiles: PS5 Fat / Slim vs PS5 Pro (`v0.3.2-plus`)
+
+| Característica / Parámetro | PS5 Fat / Slim (`base`) | PS5 Pro (`pro`) |
+| :--- | :--- | :--- |
+| **Perfil del kernel (`attribute3`)** | `0x140040` (Modo base) | `0x8540040` (High CPU Frequency) |
+| **Memoria directa disponible** | `12,016 MiB` (~11.7 GiB) | `13,232 MiB` (~12.9 GiB) |
+| **Resolución máxima de texturas (`RX_VK_TEX_MAX_DIM`)** | `512` texels | `1024` texels (Nativa completa) |
+| **Umbral de omisión de mipmaps (`RX_VK_TEX_SKIP_MB`)** | `2 MiB` | `64 MiB` (Por defecto sin recorte agresivo) |
+| **Presupuesto de renderizador (`HOS_PS5_RENDER_MB`)** | `2,560 MiB` (2.5 GiB) | `3,584 MiB` (3.5 GiB) |
+| **Reserva libre para el juego (`HOS_PS5_TEX_RESERVE_MB`)** | `2,200 MiB` | `1,600 MiB` |
+| **Retención de texturas/targets (`RX_VK_EVICT_MIN_UNUSED`)** | `30` presents | `60` presents |
+| **Rendimiento estimado (Bosque Kokiri 1080p + FG 2x)** | ~45 FPS mostrados | ~63–68 FPS mostrados |
+| **Resolución recomendada** | `1920x1080` (o `1280x720` en sesiones largas) | `1920x1080` / `2560x1440` / `3840x2160` |
+| **Upscaler y Frame Generation por defecto** | AMD FSR 3.1 (o FSR 4.1.2 Lite) + Built-in FG 2x | AMD FSR 3.1 (o FSR 4.1.2 Lite) + Built-in FG 2x |
 * **Corrección de cuelgues atómicos de cómputo RDNA 2 / RADV (`#2088`):** Serializa los bucles atómicos de punto flotante por subgrupo mediante `OpGroupNonUniformElect` (`SubgroupCasLoop`), eliminando cuelgues de GPU de 2 segundos en pases de iluminación de templos.
 * **Escáner dedicado de ROMs (`/data/longshotplus/roms/`) y validación de Title ID (`ps5_is_oot_nup`):** Detecta automáticamente cualquier `.nup` válido (`0400486024DEC000`) en `/data/longshotplus/roms/` o rutas alternativas.
 * **Salida directa FSR 3.1 (`#2085`) y salto hacia atrás a alto FPS (`#2071`):** Ahorra ~1 ms por fotograma en FSR 3.1 y corrige la altura del *backflip* por encima de 60 FPS (`HOS_FPS_TAKEOFF`).
