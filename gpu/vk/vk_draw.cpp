@@ -10409,6 +10409,30 @@ void dispatch(VkCommandBuffer cmd, NvnState& s, uint32_t x, uint32_t y, uint32_t
             }
         }
     }
+    {   // (longshot, RX_VK_SKIP_CODE=<code key prefix,...>: the dispatches of every program with a stage of that native code left out)
+        static const char* skip_code_list = getenv("RX_VK_SKIP_CODE");
+        if (skip_code_list && *skip_code_list) {
+            static std::mutex memo_mu;
+            static std::unordered_map<uint64_t, bool> memo;
+            bool skip;
+            {
+                std::lock_guard lk(memo_mu);
+                const auto it = memo.find(cp->key);
+                if (it != memo.end()) {
+                    skip = it->second;
+                } else {
+                    const std::string codes = program_code_keys(s);
+                    skip = skip_code::matches(codes, skip_code_list);
+                    memo.emplace(cp->key, skip);
+                    static int told = 0;
+                    if (skip && told++ < 32)
+                        logf("vk: dispatches of program %016llx left out (RX_VK_SKIP_CODE); its code:%s",
+                             (unsigned long long)cp->key, codes.c_str());
+                }
+            }
+            if (skip) return;
+        }
+    }
     dclock.key = cp->key;
     texture_watch_prog(cp->key);
     {   // (longshot, RX_VK_LOG_PUSH=<key prefix>: once, that program's push constants and the c0 words it reads)
