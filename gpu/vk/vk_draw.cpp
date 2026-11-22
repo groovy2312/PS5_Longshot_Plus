@@ -7500,8 +7500,8 @@ void draw(VkCommandBuffer cmd, NvnState& s, const DrawArgs& d) {
     }
     if (cp->key == 0x02ff9920c2571cc2ULL) wheel_drawn_at.store(presents_now, std::memory_order_relaxed);
     __atomic_store_n(&g_last_draw_key, cp->key & ~(1ULL << 63), __ATOMIC_RELAXED);
-    __atomic_store_n(&g_last_stage0_key, s.has_prog ? s.prog.code_key : (s.has_prog ? s.prog.code_key : 0ULL), __ATOMIC_RELAXED);
-    __atomic_store_n(&g_last_stage1_key, s.has_prog ? s.prog.code_key : (s.has_prog ? s.prog.code_key : 0ULL), __ATOMIC_RELAXED);
+    __atomic_store_n(&g_last_stage0_key, s.has_prog ? s.prog.addr : (s.has_prog ? s.prog.addr : 0ULL), __ATOMIC_RELAXED);
+    __atomic_store_n(&g_last_stage1_key, s.has_prog ? s.prog.addr : (s.has_prog ? s.prog.addr : 0ULL), __ATOMIC_RELAXED);
     __atomic_store_n(&g_last_present_seen, presents_now, __ATOMIC_RELAXED);
     if (skip_live(cp->key)) return;   // (EvilOOT, RX_VK_SKIP_FILE)
     {   // (longshot, RX_VK_SKIP_PROG=<key prefix,...>: draws too, their native code keys logged once; =-: none)
@@ -10311,7 +10311,7 @@ void dispatch(VkCommandBuffer cmd, NvnState& s, uint32_t x, uint32_t y, uint32_t
     const Program* cp = program_for(s, ProgramKind::Compute, types);
     if (cp) {
         __atomic_store_n(&g_last_draw_key, cp->key | (1ULL << 63), __ATOMIC_RELAXED);
-        __atomic_store_n(&g_last_stage0_key, s.has_prog ? s.prog.code_key : 0ULL, __ATOMIC_RELAXED);
+        __atomic_store_n(&g_last_stage0_key, s.has_prog ? s.prog.addr : 0ULL, __ATOMIC_RELAXED);
         __atomic_store_n(&g_last_stage1_key, 0ULL, __ATOMIC_RELAXED);
     }
     if (use.on) use.program(cp, cp && cp->ready.load(std::memory_order_acquire));
