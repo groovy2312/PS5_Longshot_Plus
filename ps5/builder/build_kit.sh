@@ -136,10 +136,9 @@ fi
 
 step "RADV, the Vulkan driver, at PS5 Mesa ${MESA_REV:0:11} (the long step: 10 to 30 minutes the first time)"
 archive="$vulkan/.deps/native/radv-release/lib/libvulkan_radeon.ps5.a"
-# PS5_WRAPDB_WORKAROUND: redirect WrapDB zlib downloads to GitHub releases to avoid HTTP 403 on CI runners
-if ! grep -q "PS5_WRAPDB_WORKAROUND" "$vulkan/tools/build-radv.sh"; then
-    sed -i 's|meson setup|if [ -f subprojects/zlib.wrap ]; then sed -i "s|https://mesonbuild.com|https://github.com|g; s|http://zlib.net|https://github.com|g" subprojects/zlib.wrap; fi # PS5_WRAPDB_WORKAROUND\nmeson setup|' "$vulkan/tools/build-radv.sh"
-fi
+export PKG_CONFIG_PATH="$vulkan/.deps/native/zlib/root/usr/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+mkdir -p "$vulkan/.deps/native/zlib/root/usr/lib/pkgconfig"
+printf "prefix=%s\nlibdir=\${prefix}/lib\nincludedir=\${prefix}/include\nName: zlib\nDescription: zlib\nVersion: 1.3.2\nLibs: -L\${libdir} -lz\nCflags: -I\${includedir}\n" "$vulkan/.deps/native/zlib/root/usr" > "$vulkan/.deps/native/zlib/root/usr/lib/pkgconfig/zlib.pc"
 (cd "$vulkan" && PS5_MESA_REVISION=$MESA_REV run radv bash tools/build-radv.sh release)
 [[ -f $archive ]] || die "no RADV archive at $archive"
 
