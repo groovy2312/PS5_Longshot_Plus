@@ -121,11 +121,42 @@ jobs:
             dist/builder/*-windows-x64.zip.sha256
           compression-level: 0
 
-  package-macos:
-    name: The macOS App Bundles (Apple Silicon & Intel, separate ZIPs)
+  package-macos-x64:
+    name: The macOS Intel App Bundle (macOS x64)
     needs: kit
-    runs-on: macos-latest
-    timeout-minutes: 90
+    runs-on: macos-15-intel
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: actions/download-artifact@v5
+        with:
+          name: kit
+      - name: Unpack the kit
+        run: mkdir -p dist && tar -C dist -xf kit.tar && rm kit.tar
+      - name: Build & Verify macOS Intel (x64)
+        run: |
+          python3 -I ps5/builder/package.py --system macos-x64
+          (cd dist/builder && shasum -a 256 -c *-macos-x64.zip.sha256)
+          mkdir -p /tmp/mac-x64
+          ditto -x -k dist/builder/*-macos-x64.zip /tmp/mac-x64
+          /tmp/mac-x64/PS5LongshotPlusBuilder-Intel.app/Contents/MacOS/PS5LongshotPlusBuilder --cli --check
+          QT_QPA_PLATFORM=offscreen /tmp/mac-x64/PS5LongshotPlusBuilder-Intel.app/Contents/MacOS/python/bin/python3 -I -u /tmp/mac-x64/PS5LongshotPlusBuilder-Intel.app/Contents/MacOS/app/app.py --self-test
+      - uses: actions/upload-artifact@v5
+        with:
+          name: builder-macos-x64
+          path: |
+            dist/builder/*-macos-x64.zip
+            dist/builder/*-macos-x64.zip.sha256
+          compression-level: 0
+
+  package-macos-arm64:
+    name: The macOS Apple Silicon App Bundle (macOS arm64)
+    needs: kit
+    runs-on: macos-14
+    continue-on-error: true
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
         with:
@@ -150,25 +181,11 @@ jobs:
             dist/builder/*-macos-arm64.zip
             dist/builder/*-macos-arm64.zip.sha256
           compression-level: 0
-      - name: Build & Verify macOS Intel (x64)
-        run: |
-          python3 -I ps5/builder/package.py --system macos-x64
-          (cd dist/builder && shasum -a 256 -c *-macos-x64.zip.sha256)
-          mkdir -p /tmp/mac-x64
-          ditto -x -k dist/builder/*-macos-x64.zip /tmp/mac-x64
-          test -d /tmp/mac-x64/PS5LongshotPlusBuilder-Intel.app/Contents/MacOS
-      - uses: actions/upload-artifact@v5
-        with:
-          name: builder-macos-x64
-          path: |
-            dist/builder/*-macos-x64.zip
-            dist/builder/*-macos-x64.zip.sha256
-          compression-level: 0
 
   publish:
     name: Attach them to the release
-    if: github.event_name == 'release'
-    needs: [package-linux-x64, package-windows-x64, package-macos]
+    if: always() && github.event_name == 'release' && needs.package-linux-x64.result == 'success' && needs.package-windows-x64.result == 'success' && needs.package-macos-x64.result == 'success'
+    needs: [package-linux-x64, package-windows-x64, package-macos-x64, package-macos-arm64]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
