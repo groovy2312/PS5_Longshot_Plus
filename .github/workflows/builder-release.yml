@@ -121,11 +121,11 @@ jobs:
             dist/builder/*-windows-x64.zip.sha256
           compression-level: 0
 
-  package-macos-arm64:
-    name: The macOS App Bundle (Apple Silicon arm64)
+  package-macos:
+    name: The macOS App Bundles (Apple Silicon & Intel, separate ZIPs)
     needs: kit
-    runs-on: macos-15
-    timeout-minutes: 60
+    runs-on: macos-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
         with:
@@ -135,10 +135,9 @@ jobs:
           name: kit
       - name: Unpack the kit
         run: mkdir -p dist && tar -C dist -xf kit.tar && rm kit.tar
-      - name: Build macOS Apple Silicon (arm64)
-        run: python3 -I ps5/builder/package.py --system macos-arm64
-      - name: Verify macOS Apple Silicon bundle
+      - name: Build & Verify macOS Apple Silicon (arm64)
         run: |
+          python3 -I ps5/builder/package.py --system macos-arm64
           (cd dist/builder && shasum -a 256 -c *-macos-arm64.zip.sha256)
           mkdir -p /tmp/mac-arm64
           ditto -x -k dist/builder/*-macos-arm64.zip /tmp/mac-arm64
@@ -151,25 +150,9 @@ jobs:
             dist/builder/*-macos-arm64.zip
             dist/builder/*-macos-arm64.zip.sha256
           compression-level: 0
-
-  package-macos-x64:
-    name: The macOS App Bundle (Intel x64)
-    needs: kit
-    runs-on: macos-15
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          submodules: true
-      - uses: actions/download-artifact@v5
-        with:
-          name: kit
-      - name: Unpack the kit
-        run: mkdir -p dist && tar -C dist -xf kit.tar && rm kit.tar
-      - name: Build macOS Intel (x64)
-        run: python3 -I ps5/builder/package.py --system macos-x64
-      - name: Verify macOS Intel bundle
+      - name: Build & Verify macOS Intel (x64)
         run: |
+          python3 -I ps5/builder/package.py --system macos-x64
           (cd dist/builder && shasum -a 256 -c *-macos-x64.zip.sha256)
           mkdir -p /tmp/mac-x64
           ditto -x -k dist/builder/*-macos-x64.zip /tmp/mac-x64
@@ -185,7 +168,7 @@ jobs:
   publish:
     name: Attach them to the release
     if: github.event_name == 'release'
-    needs: [package-linux-x64, package-windows-x64, package-macos-arm64, package-macos-x64]
+    needs: [package-linux-x64, package-windows-x64, package-macos]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
