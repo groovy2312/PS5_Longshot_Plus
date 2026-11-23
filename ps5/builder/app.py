@@ -1,10 +1,4 @@
-"""PS5 Longshot Plus Builder, the window: choose your game file, build the PS5 title folder, copy it to the console.
-
-    python app.py
-
-PyQt6. The build itself is ps5/builder/pipeline.py, run as a process of its own with this Python; this window shows its
-steps and its log, and can send the finished folder to a console over FTP. Nothing is sent anywhere else.
-"""
+"""PS5 Longshot Plus Builder, the window."""
 import ftplib
 import os
 import signal
@@ -12,9 +6,9 @@ import subprocess
 import sys
 
 from PyQt6.QtCore import QSettings, Qt, QThread, QUrl, pyqtSignal
-from PyQt6.QtGui import QDesktopServices, QFont, QIcon, QTextCursor
-from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QFrame, QHBoxLayout, QLabel, QLineEdit,
-                             QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QSpinBox, QVBoxLayout, QWidget)
+from PyQt6.QtGui import QDesktopServices, QFont, QIcon, QPixmap, QTextCursor
+from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFileDialog, QFrame, QGridLayout, QHBoxLayout, QLabel,
+                             QLineEdit, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QSpinBox, QVBoxLayout, QWidget)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PIPELINE = os.environ.get("LONGSHOT_PS5_PIPELINE", os.path.join(HERE, "pipeline.py"))
@@ -29,9 +23,36 @@ ABOUT = {
     6: "A few seconds.",
 }
 
+STYLE = """
+QWidget { background-color: #0D1117; color: #E6EDF3; font-size: 13px; }
+QFrame#Card { background-color: #161B22; border: 1px solid #30363D; border-radius: 10px; }
+QLabel { background: transparent; }
+QLabel#FieldLabel { color: #C9D1D9; font-weight: 600; }
+QLabel#SubTitle { color: #8B949E; font-size: 12px; }
+QLabel#Badge { background-color: #1F3A5F; color: #58A6FF; border: 1px solid #388BFD; border-radius: 6px; padding: 3px 8px; font-weight: bold; font-size: 11px; }
+QLineEdit, QComboBox, QSpinBox { background-color: #0D1117; color: #F0F6FC; border: 1px solid #30363D; border-radius: 6px; padding: 5px 10px; min-height: 24px; selection-background-color: #0070D1; }
+QLineEdit:focus, QComboBox:focus, QSpinBox:focus { border: 1px solid #388BFD; }
+QLineEdit:disabled, QComboBox:disabled, QSpinBox:disabled { background-color: #161B22; color: #6E7681; }
+QComboBox::drop-down { border: none; width: 24px; }
+QComboBox QAbstractItemView { background-color: #161B22; color: #F0F6FC; border: 1px solid #30363D; selection-background-color: #0070D1; }
+QPushButton { background-color: #21262D; color: #E6EDF3; border: 1px solid #30363D; border-radius: 6px; padding: 6px 14px; min-height: 24px; font-weight: 600; }
+QPushButton:hover { background-color: #30363D; border-color: #8B949E; }
+QPushButton:disabled { background-color: #161B22; color: #484F58; border-color: #21262D; }
+QPushButton#PrimaryBtn { background-color: #0070D1; color: #FFFFFF; border: 1px solid #1A85E8; padding: 7px 22px; }
+QPushButton#PrimaryBtn:hover { background-color: #1A85E8; }
+QPushButton#StopBtn { background-color: #DA3633; color: #FFFFFF; border: 1px solid #F85149; padding: 7px 22px; }
+QPushButton#StopBtn:hover { background-color: #F85149; }
+QPushButton#SendBtn { background-color: #238636; color: #FFFFFF; border: 1px solid #2EA043; }
+QPushButton#SendBtn:hover { background-color: #2EA043; }
+QPushButton#SendBtn:disabled { background-color: #161B22; color: #484F58; border-color: #21262D; }
+QProgressBar { background-color: #0D1117; border: 1px solid #30363D; border-radius: 6px; height: 12px; text-align: center; color: transparent; }
+QProgressBar::chunk { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0070D1, stop:1 #00D2FF); border-radius: 5px; }
+QPlainTextEdit { background-color: #090C10; color: #C9D1D9; border: 1px solid #30363D; border-radius: 6px; padding: 6px; }
+QCheckBox { color: #C9D1D9; spacing: 8px; }
+"""
+
 
 def python_exe():
-    """the Python the build runs with: this one; on Windows python.exe beside pythonw.exe, which the window runs with"""
     exe = sys.executable
     if os.name == "nt" and os.path.basename(exe).lower() == "pythonw.exe":
         console = os.path.join(os.path.dirname(exe), "python.exe")
@@ -41,8 +62,6 @@ def python_exe():
 
 
 class Build(QThread):
-    """pipeline.py as a process of its own, its lines as they come. On Windows it gets a console of its own, hidden, which
-    the compilers it starts share: none of them opens a window. Stopping it stops what it started too."""
     line = pyqtSignal(str)
     ended = pyqtSignal(int)
 
@@ -53,11 +72,10 @@ class Build(QThread):
         self.failed_to_start = ""
 
     def run(self):
-        kw = {}
         if os.name == "nt":
             si = subprocess.STARTUPINFO()
             si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            si.wShowWindow = 0   # (SW_HIDE)
+            si.wShowWindow = 0
             kw = {"startupinfo": si, "creationflags": subprocess.CREATE_NEW_CONSOLE}
         else:
             kw = {"start_new_session": True}
@@ -79,8 +97,7 @@ class Build(QThread):
             return
         try:
             if os.name == "nt":
-                subprocess.run(["taskkill", "/T", "/F", "/PID", str(p.pid)], capture_output=True,
-                               creationflags=subprocess.CREATE_NO_WINDOW)
+                subprocess.run(["taskkill", "/T", "/F", "/PID", str(p.pid)], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
             else:
                 os.killpg(p.pid, signal.SIGKILL)
         except OSError:
@@ -88,10 +105,9 @@ class Build(QThread):
 
 
 class Sender(QThread):
-    """the title folder to /data/homebrew/<title id> on the console, over FTP"""
     progress = pyqtSignal(int, int)
     said = pyqtSignal(str)
-    ended = pyqtSignal(str)   # ("" when it worked)
+    ended = pyqtSignal(str)
 
     def __init__(self, folder, host, port):
         super().__init__()
@@ -105,8 +121,7 @@ class Sender(QThread):
                 for n in names:
                     p = os.path.join(base, n)
                     files.append((p, os.path.relpath(p, self.folder).replace(os.sep, "/")))
-            # (eboot.bin and param.json last: the console lists the title once they are there)
-            files.sort(key=lambda f: (f[1] in ("eboot.bin", "sce_sys/param.json"), f[1]))
+            files.sort(key=lambda f: (f in ("eboot.bin", "sce_sys/param.json"), f))
             total = sum(os.path.getsize(p) for p, _ in files)
             sent = 0
             ftp = ftplib.FTP()
@@ -126,7 +141,7 @@ class Sender(QThread):
             mkdirs(root)
             for path, rel in files:
                 if "/" in rel:
-                    mkdirs(root + "/" + rel.rsplit("/", 1)[0])
+                    mkdirs(root + "/" + rel.rsplit("/", 1))
                 self.said.emit("sending " + rel)
                 with open(path, "rb") as f:
                     def block(b):
@@ -139,7 +154,7 @@ class Sender(QThread):
             except ftplib.all_errors:
                 pass
             self.ended.emit("")
-        except Exception as e:   # (shown to the player as it is)
+        except Exception as e:
             self.ended.emit("%s: %s" % (type(e).__name__, e))
 
 
@@ -147,84 +162,135 @@ class Window(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("PS5 Longshot Plus Builder")
-        icon = os.path.join(HERE, "longshot.png")
-        if os.path.exists(icon):
-            self.setWindowIcon(QIcon(icon))
+        icon_path = os.path.join(HERE, "longshot.png")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
         self.settings = QSettings("PS5_Longshot", "Builder")
         self.proc = None
         self.sender = None
         self.built = ""
         self.stopping = False
         self.error = ""
+        self.current = 0
 
+        header_row = QHBoxLayout()
+        header_row.setSpacing(14)
+        if os.path.exists(icon_path):
+            logo = QLabel()
+            logo.setPixmap(QPixmap(icon_path).scaled(54, 54, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+            header_row.addWidget(logo)
+
+        title_col = QVBoxLayout()
+        title_col.setSpacing(3)
+        title_line = QHBoxLayout()
         head = QLabel("PS5 Longshot Plus Builder")
         f = QFont(self.font())
         f.setPointSize(f.pointSize() + 6)
         f.setBold(True)
         head.setFont(f)
-        sub = QLabel("Builds the PlayStation 5 title folder from your own copy of the game. The build happens on this "
-                     "computer; the folder it makes is yours alone and must not be shared.")
+        badge = QLabel("v0.3.3-plus • PS5 Fat / Slim & Pro")
+        badge.setObjectName("Badge")
+        title_line.addWidget(head)
+        title_line.addWidget(badge)
+        title_line.addStretch(1)
+        sub = QLabel("Builds the PlayStation 5 title folder (PPSA99198) locally from your own copy of the game. Never share the output folder.")
+        sub.setObjectName("SubTitle")
         sub.setWordWrap(True)
+        title_col.addLayout(title_line)
+        title_col.addWidget(sub)
+        header_row.addLayout(title_col, 1)
+
+        cfg_card = QFrame()
+        cfg_card.setObjectName("Card")
+        grid = QGridLayout(cfg_card)
+        grid.setContentsMargins(16, 14, 16, 14)
+        grid.setHorizontalSpacing(12)
+        grid.setVerticalSpacing(10)
+
+        def lbl(text):
+            l = QLabel(text)
+            l.setObjectName("FieldLabel")
+            return l
 
         self.game = QLineEdit(self.settings.value("game", ""))
-        self.game.setPlaceholderText("Your game file (.nup)")
-        game_pick = QPushButton("Choose…")
-        game_pick.clicked.connect(self.pick_game)
+        self.game.setPlaceholderText("Select your game file (.nup)")
+        self.game_pick = QPushButton("Choose…")
+        self.game_pick.setFixedWidth(105)
+        self.game_pick.clicked.connect(self.pick_game)
+        grid.addWidget(lbl("Game file (.nup)"), 0, 0)
+        grid.addWidget(self.game, 0, 1, 1, 3)
+        grid.addWidget(self.game_pick, 0, 4)
+
         self.out = QLineEdit(self.settings.value("out", os.path.join(os.path.expanduser("~"), "PS5-Longshot-Plus")))
-        out_pick = QPushButton("Choose…")
-        out_pick.clicked.connect(self.pick_out)
-        form = QFormLayout()
-        form.addRow("Game file", self.row(self.game, game_pick))
-        form.addRow("Build into", self.row(self.out, out_pick))
-        # (the console's profile: pipeline.py MODELS. No model chosen until the player chooses one)
+        self.out.setPlaceholderText("Destination folder on this computer")
+        self.out_pick = QPushButton("Choose…")
+        self.out_pick.setFixedWidth(105)
+        self.out_pick.clicked.connect(self.pick_out)
+        grid.addWidget(lbl("Build into"), 1, 0)
+        grid.addWidget(self.out, 1, 1, 1, 3)
+        grid.addWidget(self.out_pick, 1, 4)
+
         self.model = QComboBox()
         self.model.addItem("Choose your console…", "")
-        self.model.addItem("PS5 / PS5 Slim", "base")
-        self.model.addItem("PS5 Pro", "pro")
+        self.model.addItem("PS5 / PS5 Slim (Base 12 GB)", "base")
+        self.model.addItem("PS5 Pro (Expanded 13.2 GB)", "pro")
         self.model.setCurrentIndex(max(0, self.model.findData(self.settings.value("model", ""))))
-        self.model.setToolTip("The folder is built for one model. PS5 Pro: its faster processor mode and larger memory, "
-                              "larger textures. PS5 / PS5 Slim: the base console's memory, smaller textures. A folder "
-                              "built for the base console also runs on a Pro, in the base console's mode.")
-        form.addRow("Console", self.model)
-        self.jobs = QSpinBox()
-        self.jobs.setRange(0, 64)
-        self.jobs.setSpecialValueText("Automatic")
-        self.jobs.setValue(int(self.settings.value("jobs", 0)))
-        self.jobs.setToolTip("Files compiled at once, at the most. Automatic: one fewer than this computer's cores; how many "
-                             "run is decided by the memory (Memory to use).")
-        form.addRow("Compile at once", self.jobs)
+
         self.memory = QComboBox()
-        self.memory.addItem("Automatic (what is free)", 0)
+        self.memory.addItem("Automatic (free RAM)", 0)
         for gb in (2, 3, 4, 6, 8, 12, 16):
             self.memory.addItem("%d GB" % gb, gb)
         self.memory.setCurrentIndex(max(0, self.memory.findData(int(self.settings.value("memory", 0)))))
-        self.memory.setToolTip("The memory the build may take. Automatic: what is free, read again as it goes. A lower "
-                               "figure builds on a computer with little memory, more slowly: 2 GB works, with other "
-                               "programs closed. Choose lower if the build is stopped for want of memory.")
-        form.addRow("Memory to use", self.memory)
 
+        self.jobs = QSpinBox()
+        self.jobs.setRange(0, 64)
+        self.jobs.setSpecialValueText("Auto cores")
+        self.jobs.setValue(int(self.settings.value("jobs", 0)))
+
+        grid.addWidget(lbl("Console model"), 2, 0)
+        grid.addWidget(self.model, 2, 1)
+        grid.addWidget(lbl("Memory / Cores"), 2, 2)
+        mem_cores = QHBoxLayout()
+        mem_cores.setSpacing(8)
+        mem_cores.addWidget(self.memory, 1)
+        mem_cores.addWidget(self.jobs)
+        grid.addLayout(mem_cores, 2, 3, 1, 2)
+        grid.setColumnStretch(1, 2)
+        grid.setColumnStretch(3, 2)
+
+        prog_card = QFrame()
+        prog_card.setObjectName("Card")
+        steps_box = QVBoxLayout(prog_card)
+        steps_box.setContentsMargins(16, 14, 16, 14)
+        steps_box.setSpacing(6)
         self.steps = []
-        steps_box = QVBoxLayout()
-        steps_box.setSpacing(2)
         for i, name in enumerate(STEPS, 1):
             l = QLabel()
             l.setTextFormat(Qt.TextFormat.RichText)
             self.steps.append(l)
             steps_box.addWidget(l)
+
         self.bar = QProgressBar()
         self.bar.setRange(0, 1)
         self.bar.setValue(0)
-        self.status = QLabel("Choose your game file, then Build.")
-        self.status.setWordWrap(True)
+        steps_box.addSpacing(4)
+        steps_box.addWidget(self.bar)
 
-        self.go = QPushButton("Build")
+        self.status = QLabel("Ready — choose your .nup file and console profile, then press Build Title.")
+        self.status.setStyleSheet("color: #58A6FF; font-weight: 600;")
+        self.status.setWordWrap(True)
+        steps_box.addWidget(self.status)
+
+        self.go = QPushButton("Build Title")
+        self.go.setObjectName("PrimaryBtn")
         self.go.setDefault(True)
         self.go.clicked.connect(self.start_or_stop)
-        self.open = QPushButton("Open folder")
+        self.open = QPushButton("Open Output Folder")
         self.open.clicked.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(self.built)))
         self.open.setEnabled(False)
-        self.details = QCheckBox("Show details")
+        self.details = QCheckBox("Show build log")
         self.details.toggled.connect(lambda on: self.log.setVisible(on))
+
         buttons = QHBoxLayout()
         buttons.addWidget(self.details)
         buttons.addStretch(1)
@@ -234,68 +300,66 @@ class Window(QWidget):
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
         self.log.setMaximumBlockCount(4000)
-        mono = QFont("monospace")
+        mono = QFont("Menlo" if sys.platform == "darwin" else "monospace")
         mono.setStyleHint(QFont.StyleHint.Monospace)
         self.log.setFont(mono)
         self.log.setVisible(False)
-        self.log.setMinimumHeight(180)
+        self.log.setMinimumHeight(160)
 
-        # ---- the console ----
-        line = QFrame()
-        line.setFrameShape(QFrame.Shape.HLine)
+        ftp_card = QFrame()
+        ftp_card.setObjectName("Card")
+        ftp_box = QVBoxLayout(ftp_card)
+        ftp_box.setContentsMargins(16, 12, 16, 12)
+        ftp_box.setSpacing(8)
+        self.send_note = QLabel("After building: copy <b>PPSA99198</b> to <b>/data/homebrew/</b> on your PS5 (or send over FTP below) and place your .nup at <b>/data/longshotplus/roms/oot.nup</b>.")
+        self.send_note.setObjectName("SubTitle")
+        self.send_note.setWordWrap(True)
+        self.send_note.setTextFormat(Qt.TextFormat.RichText)
+
         self.ps5 = QLineEdit(self.settings.value("ps5", ""))
-        self.ps5.setPlaceholderText("Console's address, for example 192.168.1.50")
+        self.ps5.setPlaceholderText("PS5 IP address (e.g. 192.168.1.50)")
         self.port = QSpinBox()
         self.port.setRange(1, 65535)
         self.port.setValue(int(self.settings.value("port", 2121)))
         self.send = QPushButton("Send to PS5")
+        self.send.setObjectName("SendBtn")
         self.send.setEnabled(False)
         self.send.clicked.connect(self.start_send)
+
         send_row = QHBoxLayout()
+        send_row.setSpacing(10)
+        send_row.addWidget(lbl("PS5 FTP IP"))
         send_row.addWidget(self.ps5, 1)
-        send_row.addWidget(QLabel("FTP port"))
+        send_row.addWidget(lbl("Port"))
         send_row.addWidget(self.port)
         send_row.addWidget(self.send)
-        self.send_note = QLabel("When the build is done: copy the title folder to <b>/data/homebrew</b> on the console yourself, "
-                                "or send it from here with the console's FTP server running. Your game file goes to "
-                                "<b>/data/longshotplus/roms</b> on the console.")
-        self.send_note.setWordWrap(True)
-        self.send_note.setTextFormat(Qt.TextFormat.RichText)
+
+        ftp_box.addWidget(self.send_note)
+        ftp_box.addLayout(send_row)
 
         box = QVBoxLayout(self)
-        box.addWidget(head)
-        box.addWidget(sub)
-        box.addLayout(form)
-        box.addLayout(steps_box)
-        box.addWidget(self.bar)
-        box.addWidget(self.status)
+        box.setContentsMargins(18, 16, 18, 16)
+        box.setSpacing(12)
+        box.addLayout(header_row)
+        box.addWidget(cfg_card)
+        box.addWidget(prog_card)
         box.addLayout(buttons)
         box.addWidget(self.log, 1)
-        box.addWidget(line)
-        box.addWidget(self.send_note)
-        box.addLayout(send_row)
-        self.resize(720, 520)
+        box.addWidget(ftp_card)
+        self.resize(820, 620)
+        self.setMinimumWidth(760)
         self.show_steps(0)
-
-    @staticmethod
-    def row(edit, button):
-        w = QWidget()
-        h = QHBoxLayout(w)
-        h.setContentsMargins(0, 0, 0, 0)
-        h.addWidget(edit, 1)
-        h.addWidget(button)
-        return w
 
     def show_steps(self, current, failed=False, done=False):
         for i, l in enumerate(self.steps, 1):
             name = STEPS[i - 1]
             if done or i < current:
-                l.setText("<span style='color:#2e9e5b'>✓</span> %s" % name)
+                l.setText("<span style='color:#3FB950; font-weight:bold'>✓</span> <span style='color:#E6EDF3'>%s</span>" % name)
             elif i == current:
-                mark = "<span style='color:#c0392b'>✗</span>" if failed else "<b>▸</b>"
-                l.setText("%s <b>%s</b> <span style='color:gray'>%s</span>" % (mark, name, "" if failed else ABOUT.get(i, "")))
+                mark = "<span style='color:#F85149; font-weight:bold'>✗</span>" if failed else "<span style='color:#00D2FF; font-weight:bold'>▸</span>"
+                l.setText("%s <b style='color:#FFFFFF'>%s</b> <span style='color:#8B949E'>— %s</span>" % (mark, name, "" if failed else ABOUT.get(i, "")))
             else:
-                l.setText("<span style='color:gray'>○ %s</span>" % name)
+                l.setText("<span style='color:#484F58'>○</span> <span style='color:#8B949E'>%s</span>" % name)
         self.current = current
 
     def pick_game(self):
@@ -310,9 +374,12 @@ class Window(QWidget):
             self.out.setText(path)
 
     def busy(self, on):
-        for w in (self.game, self.out, self.jobs, self.memory, self.model):
+        for w in (self.game, self.game_pick, self.out, self.out_pick, self.jobs, self.memory, self.model):
             w.setEnabled(not on)
-        self.go.setText("Stop" if on else "Build")
+        self.go.setText("Stop Build" if on else "Build Title")
+        self.go.setObjectName("StopBtn" if on else "PrimaryBtn")
+        self.go.style().unpolish(self.go)
+        self.go.style().polish(self.go)
 
     def start_or_stop(self):
         if self.proc:
@@ -332,8 +399,7 @@ class Window(QWidget):
         if not model:
             QMessageBox.warning(self, "No console", "Choose your console: PS5 / PS5 Slim, or PS5 Pro.")
             return
-        for k, v in (("game", game), ("out", out), ("jobs", self.jobs.value()), ("memory", self.memory.currentData()),
-                     ("model", model)):
+        for k, v in (("game", game), ("out", out), ("jobs", self.jobs.value()), ("memory", self.memory.currentData()), ("model", model)):
             self.settings.setValue(k, v)
         os.makedirs(out, exist_ok=True)
         self.log.clear()
@@ -342,7 +408,8 @@ class Window(QWidget):
         self.open.setEnabled(False)
         self.send.setEnabled(False)
         self.bar.setRange(0, 0)
-        self.status.setText("Building…")
+        self.status.setStyleSheet("color: #58A6FF; font-weight: 600;")
+        self.status.setText("Building PS5 title folder…")
         self.show_steps(1)
         self.busy(True)
         args = ["-I", "-u", PIPELINE, "--game", game, "--out", out, "--model", model]
@@ -358,19 +425,18 @@ class Window(QWidget):
 
     def line(self, line):
         if line.startswith("@@step "):
-            n = int(line.split()[1])
-            self.show_steps(n)
-            self.bar.setRange(0, 0)
-            self.status.setText(STEPS[n - 1] + "…")
+            parts = line.split(" ", 2)
+            self.show_steps(int(parts[1]))
+            if len(parts) > 2:
+                self.status.setText(parts[2])
         elif line.startswith("@@progress "):
-            _, done, total = line.split()
-            self.bar.setRange(0, int(total))
-            self.bar.setValue(int(done))
-            self.status.setText("%s: %s of %s files" % (STEPS[self.current - 1], done, total))
+            a, b = (int(x) for x in line.split()[1:3])
+            self.bar.setRange(0, max(1, b))
+            self.bar.setValue(a)
         elif line.startswith("@@done "):
-            self.built = line[7:]
+            self.built = line.split(" ", 1)[1].strip()
         elif line.startswith("@@error "):
-            self.error = line[8:].replace(" | ", "\n")
+            self.error = line.split(" ", 1)[1].strip()
         else:
             self.log.appendPlainText(line)
 
@@ -378,6 +444,7 @@ class Window(QWidget):
         self.show_steps(max(1, self.current), failed=True)
         self.bar.setRange(0, 1)
         self.bar.setValue(0)
+        self.status.setStyleSheet("color: #F85149; font-weight: 600;")
         self.status.setText(text.split("\n")[0])
         self.details.setChecked(True)
         self.log.appendPlainText("\n" + text)
@@ -394,16 +461,18 @@ class Window(QWidget):
             self.show_steps(len(STEPS) + 1, done=True)
             self.bar.setRange(0, 1)
             self.bar.setValue(1)
-            self.status.setText("Done. Your title folder: %s" % self.built)
+            self.status.setStyleSheet("color: #3FB950; font-weight: 600;")
+            self.status.setText("Done! Your PS5 title folder is ready: %s" % self.built)
             self.open.setEnabled(True)
             self.send.setEnabled(True)
         elif self.stopping:
             self.show_steps(self.current, failed=True)
             self.bar.setRange(0, 1)
             self.bar.setValue(0)
-            self.status.setText("Stopped. Build again to go on from where it was.")
+            self.status.setStyleSheet("color: #D29922; font-weight: 600;")
+            self.status.setText("Stopped. Build again to continue from where it stopped.")
         else:
-            self.fail(getattr(self, "error", "") or "The build stopped (exit %d). The details say where." % code)
+            self.fail(getattr(self, "error", "") or "The build stopped (exit %d). Check the build log for details." % code)
         self.error = ""
 
     def start_send(self):
@@ -415,7 +484,8 @@ class Window(QWidget):
         self.settings.setValue("port", self.port.value())
         self.send.setEnabled(False)
         self.go.setEnabled(False)
-        self.status.setText("Sending to the console…")
+        self.status.setStyleSheet("color: #58A6FF; font-weight: 600;")
+        self.status.setText("Sending PPSA99198 to the console over FTP…")
         self.sender = Sender(self.built, host, self.port.value())
         self.sender.progress.connect(lambda a, b: (self.bar.setRange(0, b), self.bar.setValue(a)))
         self.sender.said.connect(self.log.appendPlainText)
@@ -426,12 +496,13 @@ class Window(QWidget):
         self.send.setEnabled(True)
         self.go.setEnabled(True)
         if error:
+            self.status.setStyleSheet("color: #F85149; font-weight: 600;")
             self.status.setText("Not sent: %s" % error)
             QMessageBox.warning(self, "Not sent", "The folder was not sent to the console.\n\n%s\n\nIs the console on, with its "
                                 "FTP server running, at this address and port?" % error)
         else:
-            self.status.setText("Sent: %s is in /data/homebrew on the console. Start PS5 Longshot Plus from its home screen." %
-                                os.path.basename(self.built))
+            self.status.setStyleSheet("color: #3FB950; font-weight: 600;")
+            self.status.setText("Sent! %s is now in /data/homebrew on your PS5." % os.path.basename(self.built))
 
     def closeEvent(self, e):
         if self.proc:
@@ -445,12 +516,12 @@ class Window(QWidget):
 
 def main():
     app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+    app.setStyleSheet(STYLE)
     app.setApplicationName("PS5 Longshot Plus Builder")
     w = Window()
     w.show()
     if "--self-test" in sys.argv:
-        # (the release workflow's: the window made and shown, the build's own check run through it as a build is, then closed.
-        # Exit 0 when the check ended well)
         from PyQt6.QtCore import QTimer
         result = {"code": 1}
         log = []
