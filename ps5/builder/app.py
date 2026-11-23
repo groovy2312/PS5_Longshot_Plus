@@ -181,6 +181,26 @@ class Sender(QThread):
             self.ended.emit("%s: %s" % (type(e).__name__, e))
 
 
+def _builder_version():
+    for rel in ("../VERSION", "VERSION"):
+        vp = os.path.join(os.path.dirname(os.path.abspath(__file__)), rel)
+        if os.path.isfile(vp):
+            v = open(vp).read().strip()
+            if v:
+                return v if v.startswith("v") else f"v{v}"
+    try:
+        v = subprocess.check_output(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+            stderr=subprocess.DEVNULL,
+        ).decode().strip()
+        if v:
+            return v if v.startswith("v") else f"v{v}"
+    except Exception:
+        pass
+    return "v0.3.4-plus"
+
+
 class Window(QWidget):
     def __init__(self):
         super().__init__()
@@ -211,7 +231,7 @@ class Window(QWidget):
         f.setPointSize(f.pointSize() + 6)
         f.setBold(True)
         head.setFont(f)
-        badge = QLabel("v0.3.3-plus • PS5 Fat / Slim & Pro")
+        badge = QLabel(f"{_builder_version()} • PS5 Fat / Slim & Pro")
         badge.setObjectName("Badge")
         title_line.addWidget(head)
         title_line.addWidget(badge)
