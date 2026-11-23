@@ -155,8 +155,9 @@ const char* tx_show_clock(int v) {
     static const char* const names[] = {"Off", "12h", "24h"};
     return names[std::clamp(v, 0, 2)];
 }
-bool format_clock_now(int mode, char* out, size_t cap) {
+bool format_clock_now(int mode, char* out, size_t cap, char* ampm = nullptr, size_t ampm_cap = 0) {
     if (mode <= 0 || !out || cap == 0) return false;
+    if (ampm && ampm_cap > 0) ampm[0] = 0;
     const time_t now = time(nullptr);
     tm t{};
 #ifdef _WIN32
@@ -167,7 +168,13 @@ bool format_clock_now(int mode, char* out, size_t cap) {
     if (mode == 1) {
         int hr = t.tm_hour % 12;
         if (hr == 0) hr = 12;
-        snprintf(out, cap, "%d:%02d %s", hr, t.tm_min, t.tm_hour >= 12 ? "PM" : "AM");
+        snprintf(out, cap, "%d:%02d", hr, t.tm_min);
+        if (ampm && ampm_cap > 0) {
+            snprintf(ampm, ampm_cap, "%s", t.tm_hour >= 12 ? "PM" : "AM");
+        } else {
+            const size_t len = strlen(out);
+            if (len < cap) snprintf(out + len, cap - len, " %s", t.tm_hour >= 12 ? "PM" : "AM");
+        }
     } else {
         snprintf(out, cap, "%02d:%02d", t.tm_hour, t.tm_min);
     }
@@ -3834,9 +3841,18 @@ void draw_options(ui::Ctx& c) {
         if (fit > 0) ui::text_mid(c, c.f.body, fit, c.safe, ty, ui::kBannerInk, ver.c_str());
     }
     if (opts.show_clock > 0) {
-        char clk[24];
-        if (format_clock_now(opts.show_clock, clk, sizeof clk))
-            ui::text_mid_right(c, c.f.strong, 17 * s, c.w - c.safe, ty, ui::kBannerInk, clk);
+        char clk[16], ampm[8];
+        if (format_clock_now(opts.show_clock, clk, sizeof clk, ampm, sizeof ampm)) {
+            const float pt = 17 * s, sub_pt = pt * 0.62f, gap = ampm[0] ? 3.5f * s : 0.0f;
+            const ImVec2 main_sz = ui::size_of(c.f.strong, pt, clk);
+            const ImVec2 sub_sz = ampm[0] ? ui::size_of(c.f.body, sub_pt, ampm) : ImVec2(0, 0);
+            const float rx = c.w - c.safe;
+            if (ampm[0]) {
+                const float sub_y = ty + (main_sz.y - sub_sz.y) * 0.35f;
+                ui::text_mid(c, c.f.body, sub_pt, rx - sub_sz.x, sub_y, ui::rgba(46, 30, 12, 190), ampm);
+            }
+            ui::text_mid(c, c.f.strong, pt, rx - sub_sz.x - gap - main_sz.x, ty, ui::kBannerInk, clk);
+        }
     }
     // the rows, in the column; the help beside it
     float cx0, cx1, hx0, hx1;
@@ -6462,13 +6478,22 @@ void menu_tick() {
 }
 
 void draw_clock(ui::Ctx& c) {
-    char clk[24];
-    if (!format_clock_now(opts.show_clock, clk, sizeof clk)) return;
-    const float s = fps_scale(c), pt = 18 * s;
+    char clk[16], ampm[8];
+    if (!format_clock_now(opts.show_clock, clk, sizeof clk, ampm, sizeof ampm)) return;
+    const float s = fps_scale(c), pt = 18 * s, sub_pt = pt * 0.62f;
+    const float gap = ampm[0] ? 4.0f * s : 0.0f;
     const ImVec2 sz = ui::size_of(c.f.strong, pt, clk);
-    const float x = c.w - c.safe - sz.x, y = c.safe;
+    const ImVec2 sub_sz = ampm[0] ? ui::size_of(c.f.body, sub_pt, ampm) : ImVec2(0, 0);
+    const float total_w = sz.x + gap + sub_sz.x;
+    const float x = c.w - c.safe - total_w, y = c.safe;
     ui::text(c, c.f.strong, pt, ImVec2(x + 1.5f * s, y + 1.5f * s), ui::rgba(0, 0, 0, 180), clk);
     ui::text(c, c.f.strong, pt, ImVec2(x, y), ui::kInkBright, clk);
+    if (ampm[0]) {
+        const float sx = x + sz.x + gap;
+        const float sy = y + (sz.y - sub_sz.y) * 0.78f;
+        ui::text(c, c.f.body, sub_pt, ImVec2(sx + 1.2f * s, sy + 1.2f * s), ui::rgba(0, 0, 0, 160), ampm);
+        ui::text(c, c.f.body, sub_pt, ImVec2(sx, sy), ui::kSoft, ampm);
+    }
 }
 
 void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
