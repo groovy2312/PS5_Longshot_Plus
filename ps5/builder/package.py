@@ -206,7 +206,6 @@ def stage(system, a):
     py_key = "python-linux" if linux else (system.replace("macos-", "python-macos-") if macos else "python-windows")
     with tarfile.open(fetch(py_key, a.cache)) as t:
         t.extractall(top, filter="tar")
-    host_py = os.path.join(unpack(fetch("python-linux", a.cache), os.path.join(a.cache, "python-linux")), "bin", "python3")
     if linux:
         run([os.path.join(top, "python", "bin", "python3"), "-I", "-m", "pip", "install", "--no-warn-script-location",
              "--disable-pip-version-check", "--no-compile", "-q"] + PACKAGES)
@@ -228,6 +227,7 @@ def stage(system, a):
             with zipfile.ZipFile(os.path.join(wheels, w)) as z: z.extractall(site)
         shutil.rmtree(os.path.join(top, "python", "share"), ignore_errors=True)
     else:
+        host_py = os.path.join(unpack(fetch("python-linux", a.cache), os.path.join(a.cache, "python-linux")), "bin", "python3")
         # (Windows' wheels, fetched and unpacked by this PC's Python: a wheel is a zip of what goes in site-packages)
         wheels = os.path.join(a.cache, "wheels-windows")
         shutil.rmtree(wheels, ignore_errors=True)
