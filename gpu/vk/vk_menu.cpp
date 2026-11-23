@@ -1100,11 +1100,20 @@ void apply_auto() {
     opts.handheld = 0;   // (docked: the handheld profile gave a GTX 1050 a black picture; the Render resolution lightens the card)
     if (c.resolution) opts.resolution = ur::snap_render(c.upscaler, c.resolution);
 #ifdef __PROSPERO__
-    opts.output_res = 0;     // 1920x1080 (native)
-    opts.handheld = 0;       // TV Mode (Modo TV)
-    opts.resolution = 0;     // Auto (dynamic internal resolution)
-    opts.sharpness = 30;     // 30% sharpness
-    opts.framegen = 2;       // 2x (game at 30 fps)
+    const char* render_mb_env = getenv("HOS_PS5_RENDER_MB");
+    const char* tex_dim_env = getenv("RX_VK_TEX_MAX_DIM");
+    const bool is_ps5_pro = (render_mb_env && atoi(render_mb_env) >= 3200) ||
+                            (tex_dim_env && atoi(tex_dim_env) >= 1024);
+    if (is_ps5_pro) {
+        opts.output_res = output_choice_of(1920, 1080); // 1920x1080 (native) on PS5 Pro
+        opts.sharpness = 30;                            // 30% sharpness
+    } else {
+        opts.output_res = output_choice_of(1280, 720);  // 1280x720 on PS5 Fat / Slim for long-session memory stability
+        opts.sharpness = 35;                            // 35% sharpness to keep 720p crisp
+    }
+    opts.handheld = 0;                  // TV Mode (Modo TV)
+    opts.resolution = 0;                // Auto (dynamic internal resolution)
+    opts.framegen = 2;                  // 2x (game at 30 fps)
     opts.framegen_by = fg_by::kBuiltIn; // Built-in (FG integrada)
 #endif
     auto_tuned = 0;   // (chosen again: measured again in play)
