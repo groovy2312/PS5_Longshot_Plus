@@ -124,9 +124,32 @@ class Sender(QThread):
             files.sort(key=lambda f: (f in ("eboot.bin", "sce_sys/param.json"), f))
             total = sum(os.path.getsize(p) for p, _ in files)
             sent = 0
-            ftp = ftplib.FTP()
-            ftp.connect(self.host, self.port, timeout=30)
-            ftp.login()
+            ftp = None
+            payload_ports = {7070, 9020, 9021, 9090}
+            candidates = [] if self.port in payload_ports else [self.port]
+            for cand in (2121, 1337):
+                if cand not in candidates:
+                    candidates.append(cand)
+            last_err = None
+            for cand in candidates:
+                try:
+                    c = ftplib.FTP()
+                    c.connect(self.host, cand, timeout=5)
+                    c.login()
+                    ftp = c
+                    if cand != self.port:
+                        self.said.emit(f"Connected via auto-detected FTP port {cand}…")
+                    break
+                except Exception as exc:
+                    last_err = exc
+            if ftp is None:
+                if self.port in payload_ports:
+                    raise ConnectionError(
+                        f"Port {self.port} is a payload receiver, not an FTP server. "
+                        f"Enable FTP Server in etaHEN / Itemzflow / Prospero Mgr (or inject ftpsrv.elf) "
+                        f"so port 2121 or 1337 is active."
+                    )
+                raise last_err
             ftp.voidcmd("TYPE I")
             root = "/data/homebrew/" + title
 
