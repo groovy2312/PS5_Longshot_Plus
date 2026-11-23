@@ -185,7 +185,7 @@ def native_parts(system, vulkan, cache, top, kit):
     for f in ("LICENSE", "PROVENANCE.md"):
         shutil.copy2(os.path.join(zbic_src, f), os.path.join(zbic_dir, f))
     if system == "windows-x64":
-        run([cc, "-O2", "-municode", "-mwindows", "-static", os.path.join(HERE, "launcher.c"), "-o", os.path.join(top, "PS5LongshotPlusBuilder.exe")])
+        run([cc, "-O2", "-municode", "-mwindows", "-static", os.path.join(HERE, "launcher.c"), "-o", os.path.join(top, "PS5LongshotPlusBuilder-Windows-x64.exe")])
         with open(os.path.join(top, "PS5LongshotPlusBuilder-cli.cmd"), "w", newline="\r\n") as f:
             f.write("@echo off\nrem PS5 Longshot Plus Builder without the window: \"PS5LongshotPlusBuilder-cli.cmd --game <file> --out <folder> "
                     "--model base|pro\", or --check. Its output goes to this console, or where it is redirected\n"
@@ -199,7 +199,8 @@ def stage(system, a):
     base_out = os.path.join(a.out, system)
     shutil.rmtree(base_out, ignore_errors=True)
     app_name = "PS5LongshotPlusBuilder-AppleSilicon.app" if system == "macos-arm64" else "PS5LongshotPlusBuilder-Intel.app"
-    top = os.path.join(base_out, app_name, "Contents", "MacOS") if macos else os.path.join(base_out, "PS5LongshotPlusBuilder")
+    dir_name = "PS5LongshotPlusBuilder-Windows-x64" if system == "windows-x64" else "PS5LongshotPlusBuilder-Linux-x64"
+    top = os.path.join(base_out, app_name, "Contents", "MacOS") if macos else os.path.join(base_out, dir_name)
     os.makedirs(top)
     vulkan = os.environ.get("PS5_VULKAN") or os.path.join(ROOT, "ps5", "deps", "PS5_Vulkan")
 
@@ -285,7 +286,7 @@ def stage(system, a):
         top = os.path.dirname(contents)
         subprocess.run(["codesign", "--force", "--deep", "-s", "-", top], check=False)
     with open(os.path.join(os.path.dirname(top) if macos else top, "README.txt"), "w", newline="\r\n" if system == "windows-x64" else "\n") as f:
-        f.write(README % {"version": ver, "start": ("PS5LongshotPlusBuilder-AppleSilicon.app" if system == "macos-arm64" else "PS5LongshotPlusBuilder-Intel.app") if macos else ("the AppImage" if linux else "PS5LongshotPlusBuilder.exe")})
+        f.write(README % {"version": ver, "start": ("PS5LongshotPlusBuilder-AppleSilicon.app" if system == "macos-arm64" else "PS5LongshotPlusBuilder-Intel.app") if macos else ("PS5LongshotPlusBuilder-%s-linux-x64.AppImage" % ver if linux else "PS5LongshotPlusBuilder-Windows-x64.exe")})
     return top, ver
 
 
@@ -298,13 +299,13 @@ def appimage(top, ver, a):
         f.write('#!/bin/sh\nexec "$(dirname -- "$(readlink -f -- "$0")")/usr/PS5LongshotPlusBuilder/ps5-longshot-plus-builder" "$@"\n')
     os.chmod(os.path.join(appdir, "AppRun"), 0o755)
     with open(os.path.join(appdir, "ps5-longshot-plus-builder.desktop"), "w") as f:
-        f.write("[Desktop Entry]\nType=Application\nName=PS5 Longshot Plus Builder\nComment=Builds the PS5 title folder of PS5 Longshot Plus from "
+        f.write("[Desktop Entry]\nType=Application\nName=PS5 Longshot Plus Builder (Linux x64)\nComment=Builds the PS5 title folder of PS5 Longshot Plus from "
                 "your own copy of the game\nExec=ps5-longshot-plus-builder\nIcon=ps5-longshot-plus-builder\nCategories=Game;Utility;\nTerminal=false\n")
     shutil.copy2(os.path.join(ROOT, "ps5", "sce_sys", "icon0.png"), os.path.join(appdir, "ps5-longshot-plus-builder.png"))
     shutil.copy2(os.path.join(appdir, "ps5-longshot-plus-builder.png"), os.path.join(appdir, ".DirIcon"))
     tool = fetch("appimagetool", a.cache)
     os.chmod(tool, 0o755)
-    out = os.path.join(a.out, "PS5LongshotPlusBuilder-%s-x86_64.AppImage" % ver)
+    out = os.path.join(a.out, "PS5LongshotPlusBuilder-%s-linux-x64.AppImage" % ver)
     # (--appimage-extract-and-run: no FUSE in a build container)
     run([tool, "--appimage-extract-and-run", "--no-appstream", appdir, out], env=dict(os.environ, ARCH="x86_64", VERSION=ver))
     return out

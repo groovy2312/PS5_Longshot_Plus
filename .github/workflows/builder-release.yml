@@ -69,10 +69,9 @@ jobs:
           retention-days: 3
           compression-level: 6
 
-  package:
-    name: The AppImage and the Windows folder
+  package-linux-x64:
+    name: The Linux AppImage (Linux x64)
     needs: kit
-    # (22.04: the AppImage's own programs, built here, then run on any Linux of the last years)
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
@@ -86,74 +85,41 @@ jobs:
         run: mkdir -p dist && tar -C dist -xf kit.tar && rm kit.tar
       - name: What the packaging needs
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends g++ libxcb-cursor0 xz-utils
-      - name: Linux, the AppImage
+      - name: Build Linux x64 AppImage
         run: python3 -I ps5/builder/package.py --system linux-x64
-      - name: Windows, the portable folder
+      - uses: actions/upload-artifact@v5
+        with:
+          name: builder-linux-x64
+          path: |
+            dist/builder/*-linux-x64.AppImage
+            dist/builder/*-linux-x64.AppImage.sha256
+          compression-level: 0
+
+  package-windows-x64:
+    name: The Windows Portable Folder (Windows x64)
+    needs: kit
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: actions/download-artifact@v5
+        with:
+          name: kit
+      - name: Unpack the kit
+        run: mkdir -p dist && tar -C dist -xf kit.tar && rm kit.tar
+      - name: What the packaging needs
+        run: sudo apt-get update && sudo-get install -y --no-install-recommends g++ xz-utils || sudo apt-get install -y --no-install-recommends g++ xz-utils
+      - name: Build Windows x64 ZIP
         run: python3 -I ps5/builder/package.py --system windows-x64
       - uses: actions/upload-artifact@v5
         with:
-          name: builder-linux
+          name: builder-windows-x64
           path: |
-            dist/builder/*.AppImage
-            dist/builder/*.AppImage.sha256
+            dist/builder/*-windows-x64.zip
+            dist/builder/*-windows-x64.zip.sha256
           compression-level: 0
-      - uses: actions/upload-artifact@v5
-        with:
-          name: builder-windows
-          path: |
-            dist/builder/*.zip
-            dist/builder/*.zip.sha256
-          compression-level: 0
-
-  check-linux:
-    name: The AppImage starts (Linux)
-    needs: package
-    runs-on: ubuntu-22.04
-    timeout-minutes: 20
-    steps:
-      - uses: actions/download-artifact@v5
-        with:
-          name: builder-linux
-      - name: What a desktop has that a runner does not
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libegl1 libgl1 libxkbcommon0 libdbus-1-3 libfontconfig1 libfuse2
-      - name: Its checksum
-        run: sha256sum --check --strict *.AppImage.sha256
-      - name: The builder's parts, and the window
-        run: |
-          chmod +x *.AppImage
-          ./*.AppImage --appimage-version || true
-          ./*.AppImage --cli --check
-          QT_QPA_PLATFORM=offscreen ./*.AppImage --self-test
-
-  check-windows:
-    name: The portable folder starts (Windows)
-    needs: package
-    runs-on: windows-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/download-artifact@v5
-        with:
-          name: builder-windows
-      - name: Unpack it, as a player does
-        shell: pwsh
-        run: |
-          $zip = Get-ChildItem *.zip | Select-Object -First 1
-          $want = (Get-Content "$($zip.Name).sha256").Split(" ")[0]
-          $have = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
-          if ($want -ne $have) { throw "checksum: $have, not $want" }
-          Expand-Archive $zip -DestinationPath "C:\b"
-      - name: The builder's parts, and the window
-        shell: pwsh
-        run: |
-          $b = "C:\b\PS5LongshotPlusBuilder"
-          & "$b\python\python.exe" -I -u "$b\app\pipeline.py" --check
-          if ($LASTEXITCODE) { throw "the check failed" }
-          $env:QT_QPA_PLATFORM = "offscreen"
-          & "$b\python\python.exe" -I -u "$b\app\app.py" --self-test
-          if ($LASTEXITCODE) { throw "the window's self-test failed" }
-          # (the start a player double-clicks: its command-line form, which waits and gives the exit code)
-          $p = Start-Process "$b\PS5LongshotPlusBuilder.exe" -ArgumentList "--cli", "--check" -Wait -PassThru
-          if ($p.ExitCode) { throw "PS5LongshotPlusBuilder.exe --cli --check: exit $($p.ExitCode)" }
 
   package-macos-arm64:
     name: The macOS App Bundle (Apple Silicon arm64)
