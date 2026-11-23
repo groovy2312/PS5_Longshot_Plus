@@ -1,0 +1,208 @@
+# PS5 Longshot Plus Builder: the AppImage (Linux) and the portable Windows folder, built and attached to a release when one is
+# published. Nothing here has or makes game content: the kit is what the title is made of besides the game, and players
+# add their own game on their own PC.
+#
+#   kit            ps5/builder/build_kit.sh: RADV, FFmpeg, the SDK, the runtime and the renderer for the console (no game)
+#   package        ps5/builder/package.py: both systems' packages, on Linux (the Windows one is cross-built)
+#   check-*        each package started on its own system: the builder's parts checked, the window opened (pipeline.py --check)
+#   publish        the two files and their SHA-256 attached to the release; only when both checks passed
+#
+# "Run workflow" (workflow_dispatch) does everything but publish, and keeps the packages as the run's artifacts.
+name: Builder release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The version the packages are named with
+        default: test
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: builder-release-${{ github.event.release.tag_name || github.run_id }}
+  cancel-in-progress: false
+
+env:
+  BUILDER_VERSION: ${{ github.event.release.tag_name || inputs.version }}
+
+jobs:
+  kit:
+    name: The kit (no game)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+          fetch-depth: 0
+      - name: The packages the build needs
+        run: sudo bash ps5/builder/build_kit.sh --install-packages
+      - name: What an earlier run fetched and built
+        uses: actions/cache@v5
+        with:
+          path: |
+            .local/projects
+            .local/ps5-deps
+            ps5/deps/PS5_Vulkan/.deps
+          key: kit-deps-v3-${{ hashFiles('ps5/builder/build_kit.sh', 'ps5/tools/build-ffmpeg.sh', 'ps5/tools/build-zstd.sh', '.gitmodules', 'ps5/deps/PS5_Vulkan') }}-${{ github.sha }}
+          restore-keys: |
+            kit-deps-v3-${{ hashFiles('ps5/builder/build_kit.sh', 'ps5/tools/build-ffmpeg.sh', 'ps5/tools/build-zstd.sh', '.gitmodules', 'ps5/deps/PS5_Vulkan') }}-
+      - name: Build the kit
+        run: bash ps5/builder/build_kit.sh
+      - name: The logs, when it failed
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: kit-logs
+          path: work/build-kit
+      - name: Pack the kit
+        run: tar -C dist -cf kit.tar kit
+      - uses: actions/upload-artifact@v5
+        with:
+          name: kit
+          path: kit.tar
+          retention-days: 3
+          compression-level: 6
+
+  package:
+    name: The AppImage and the Windows folder
+    needs: kit
+    # (22.04: the AppImage's own programs, built here, then run on any Linux of the last years)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: actions/download-artifact@v5
+        with:
+          name: kit
+      - name: Unpack the kit
+        run: mkdir -p dist && tar -C dist -xf kit.tar && rm kit.tar
+      - name: What the packaging needs
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends g++ libxcb-cursor0 xz-utils
+      - name: Linux, the AppImage
+        run: python3 -I ps5/builder/package.py --system linux-x64
+      - name: Windows, the portable folder
+        run: python3 -I ps5/builder/package.py --system windows-x64
+      - uses: actions/upload-artifact@v5
+        with:
+          name: builder-linux
+          path: |
+            dist/builder/*.AppImage
+            dist/builder/*.AppImage.sha256
+          compression-level: 0
+      - uses: actions/upload-artifact@v5
+        with:
+          name: builder-windows
+          path: |
+            dist/builder/*.zip
+            dist/builder/*.zip.sha256
+          compression-level: 0
+
+  check-linux:
+    name: The AppImage starts (Linux)
+    needs: package
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: builder-linux
+      - name: What a desktop has that a runner does not
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libegl1 libgl1 libxkbcommon0 libdbus-1-3 libfontconfig1 libfuse2
+      - name: Its checksum
+        run: sha256sum --check --strict *.AppImage.sha256
+      - name: The builder's parts, and the window
+        run: |
+          chmod +x *.AppImage
+          ./*.AppImage --appimage-version || true
+          ./*.AppImage --cli --check
+          QT_QPA_PLATFORM=offscreen ./*.AppImage --self-test
+
+  check-windows:
+    name: The portable folder starts (Windows)
+    needs: package
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: builder-windows
+      - name: Unpack it, as a player does
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem *.zip | Select-Object -First 1
+          $want = (Get-Content "$($zip.Name).sha256").Split(" ")[0]
+          $have = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+          if ($want -ne $have) { throw "checksum: $have, not $want" }
+          Expand-Archive $zip -DestinationPath "C:\b"
+      - name: The builder's parts, and the window
+        shell: pwsh
+        run: |
+          $b = "C:\b\PS5LongshotPlusBuilder"
+          & "$b\python\python.exe" -I -u "$b\app\pipeline.py" --check
+          if ($LASTEXITCODE) { throw "the check failed" }
+          $env:QT_QPA_PLATFORM = "offscreen"
+          & "$b\python\python.exe" -I -u "$b\app\app.py" --self-test
+          if ($LASTEXITCODE) { throw "the window's self-test failed" }
+          # (the start a player double-clicks: its command-line form, which waits and gives the exit code)
+          $p = Start-Process "$b\PS5LongshotPlusBuilder.exe" -ArgumentList "--cli", "--check" -Wait -PassThru
+          if ($p.ExitCode) { throw "PS5LongshotPlusBuilder.exe --cli --check: exit $($p.ExitCode)" }
+
+  package-macos:
+    name: The macOS App Bundles (Apple Silicon & Intel)
+    needs: kit
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: actions/download-artifact@v5
+        with:
+          name: kit
+      - name: Unpack the kit
+        run: mkdir -p dist && tar -C dist -xf kit.tar && rm kit.tar
+      - name: Build macOS Apple Silicon (arm64) & Intel (x64)
+        run: |
+          python3 -m pip install --quiet pip
+          python3 -I ps5/builder/package.py --system macos-arm64
+          python3 -I ps5/builder/package.py --system macos-x64
+      - name: Verify macOS Apple Silicon bundle
+        run: |
+          shasum -a 256 -c dist/builder/*-macos-arm64.zip.sha256
+          mkdir -p /tmp/mac-test
+          ditto -x -k dist/builder/*-macos-arm64.zip /tmp/mac-test
+          /tmp/mac-test/PS5LongshotPlusBuilder.app/Contents/MacOS/PS5LongshotPlusBuilder --cli --check
+          QT_QPA_PLATFORM=offscreen /tmp/mac-test/PS5LongshotPlusBuilder.app/Contents/MacOS/python/bin/python3 -I -u /tmp/mac-test/PS5LongshotPlusBuilder.app/Contents/MacOS/app/app.py --self-test
+      - uses: actions/upload-artifact@v5
+        with:
+          name: builder-macos
+          path: |
+            dist/builder/*-macos-*.zip
+            dist/builder/*-macos-*.zip.sha256
+          compression-level: 0
+
+  publish:
+    name: Attach them to the release
+    if: github.event_name == 'release'
+    needs: [check-linux, check-windows, package-macos]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: builder-*
+          merge-multiple: true
+      - name: Upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" *.AppImage *.AppImage.sha256 *.zip *.zip.sha256 --clobber --repo "$GITHUB_REPOSITORY"
