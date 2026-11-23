@@ -850,3 +850,8 @@ By default, **PS5 Longshot Plus** runs safely with **AMD FSR 3.1**. To unlock **
 - **4 MB GPU import chunks by default (`#74`, `RX_VK_IMPORT_CHUNK_MB=4`, `RX_VK_IMPORT_SPAN_MB=16`):** cuts unused page commits on PS5, freeing 200–330 MiB on base PS5 / PS5 Slim.
 - **O(1) embedded mutex index lookup (`#75`, `HOS_MUTEX_IX=1`):** stores the host object index directly in `nn::os::MutexType + 8`, cutting mutex lookup overhead on PS5.
 - **Upstream stability & memory fixes (`#2194`, `#2258`) + Dual Watchdog + updated `PS5_PayloadSDK` (`55a2de04`).**
+
+### v0.3.3-plus Structural & Platform Notes
+- **macOS Native Builders:** Added `macos-arm64` (Apple Silicon) and `macos-x64` (Intel) `.app` bundles with Python 3.13, PyQt6, LLVM/Clang 23, and Mach-O tools.
+- **PS5 Memory & Sync (`#68`, `#74`, `#75`, `#2194`, `#2258`):** Pre-map zeroing (`HOS_PS5_ZERO_FIRST=1`), 4 MB GPU import chunks (`+200–330 MiB` free on PS5 Fat/Slim), O(1) embedded mutex index (`HOS_MUTEX_IX=1`), fast LDS ASTC decode, Dual Watchdog (`crash_trace.txt`), and updated `PS5_PayloadSDK` (`55a2de04`).
+- **First-Build Shader Cache Rebuild:** Upgrading to `v0.3.3-plus` invalidates `longshot-ps5-work` once due to the updated SDK and Vulkan memory stamp, regenerating the ~38,809 known pipelines cleanly; subsequent builds take seconds.

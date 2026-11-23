@@ -125,3 +125,8 @@ En **`v0.3.3-plus`**, el juego ya **no depende de un único nombre de archivo fi
 - **Chunks de importación GPU de 4 MB por defecto (`#74`, `RX_VK_IMPORT_CHUNK_MB=4`, `RX_VK_IMPORT_SPAN_MB=16`):** reduce páginas sin usar en PS5, liberando 200–330 MiB reales en PS5 Fat / Slim.
 - **Búsqueda O(1) de mutex por índice embebido (`#75`, `HOS_MUTEX_IX=1`):** guarda el índice del objeto host en `nn::os::MutexType + 8`, reduciendo la carga de CPU en sincronización.
 - **Mejoras de memoria y estabilidad upstream (`#2194`, `#2258`) + Watchdog Dual + `PS5_PayloadSDK` actualizado (`55a2de04`).**
+
+### Notas Estructurales y de Plataforma (v0.3.3-plus)
+- **Builders Nativos para macOS:** Añade paquetes `.app` autónomos para `macos-arm64` (Apple Silicon) y `macos-x64` (Intel) con Python 3.13, PyQt6, LLVM/Clang 23 y herramientas Mach-O integradas.
+- **Memoria y Sincronización PS5 (`#68`, `#74`, `#75`, `#2194`, `#2258`):** Puesta a cero previa al mapeo (`HOS_PS5_ZERO_FIRST=1`), *chunks* de importación GPU de 4 MB (`+200–330 MiB` libres en PS5 Fat/Slim), búsqueda O(1) de *mutex* por índice (`HOS_MUTEX_IX=1`), decodificación ASTC rápida vía LDS, Watchdog Dual (`crash_trace.txt`) y `PS5_PayloadSDK` (`55a2de04`).
+- **Regeneración Inicial de Shaders:** Al actualizar a `v0.3.3-plus`, el Builder invalida una sola vez `longshot-ps5-work` debido al nuevo sello del SDK y memoria Vulkan, regenerando los ~38,809 *shaders* conocidos; las siguientes compilaciones vuelven a tardar segundos.
