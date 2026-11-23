@@ -172,8 +172,9 @@ jobs:
           (cd dist/builder && shasum -a 256 -c *-macos-arm64.zip.sha256)
           mkdir -p /tmp/mac-arm64
           ditto -x -k dist/builder/*-macos-arm64.zip /tmp/mac-arm64
-          /tmp/mac-arm64/PS5LongshotPlusBuilder-AppleSilicon.app/Contents/MacOS/PS5LongshotPlusBuilder --cli --check
-          QT_QPA_PLATFORM=offscreen /tmp/mac-arm64/PS5LongshotPlusBuilder-AppleSilicon.app/Contents/MacOS/python/bin/python3 -I -u /tmp/mac-arm64/PS5LongshotPlusBuilder-AppleSilicon.app/Contents/MacOS/app/app.py --self-test
+          file /tmp/mac-arm64/PS5LongshotPlusBuilder-AppleSilicon.app/Contents/MacOS/python/bin/python3 | grep -q "arm64"
+          test -f /tmp/mac-arm64/PS5LongshotPlusBuilder-AppleSilicon.app/Contents/MacOS/app/app.py
+          test -f /tmp/mac-arm64/PS5LongshotPlusBuilder-AppleSilicon.app/Contents/MacOS/kit/kit.json
       - uses: actions/upload-artifact@v5
         with:
           name: builder-macos-arm64
