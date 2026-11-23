@@ -171,7 +171,6 @@ jobs:
         run: mkdir -p dist && tar -C dist -xf kit.tar && rm kit.tar
       - name: Build macOS Apple Silicon (arm64) & Intel (x64)
         run: |
-          python3 -m pip install --quiet pip
           python3 -I ps5/builder/package.py --system macos-arm64
           python3 -I ps5/builder/package.py --system macos-x64
       - name: Verify macOS Apple Silicon bundle
