@@ -131,8 +131,13 @@ inline std::string translate(const std::string& in, const char* lang_code) {
         return in;
     }
     if (in.rfind("about ", 0) == 0) {
-        int val = 0;
+        int mins = 0, secs = 0, val = 0;
         char b[64];
+        if (sscanf(in.c_str(), "about %d min %d s left", &mins, &secs) == 2) {
+            if (is_es()) { snprintf(b, sizeof b, "quedan unos %d min %d s", mins, secs); return b; }
+            if (is_pt()) { snprintf(b, sizeof b, "faltam cerca de %d min %d s", mins, secs); return b; }
+            if (is_fr()) { snprintf(b, sizeof b, "environ %d min %d s restantes", mins, secs); return b; }
+        }
         if (sscanf(in.c_str(), "about %d s left", &val) == 1) {
             if (is_es()) { snprintf(b, sizeof b, "quedan unos %d s", val); return b; }
             if (is_pt()) { snprintf(b, sizeof b, "faltam cerca de %d s", val); return b; }

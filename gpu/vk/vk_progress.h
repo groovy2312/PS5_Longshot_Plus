@@ -22,14 +22,16 @@ struct ProgressClock {
     static constexpr double kSmooth = 8.0;     // (seconds: the estimate's time constant)
     double t[kSamples]{};
     size_t done[kSamples]{};
+    size_t base_done = 0;
     int n = 0, head = 0;   // (the samples, oldest at head)
     double last_note = -1, shown = -1;
 
-    void reset() { n = head = 0, last_note = shown = -1; }
+    void reset() { n = head = 0, base_done = 0, last_note = shown = -1; }
     /// A sample: at seconds t_now, done of total (four a second at most are kept)
     void note(double t_now, size_t done_now, size_t total) {
         if (n && done_now < done[(head + n - 1) % kSamples]) reset();   // (a new stage)
         if (last_note >= 0 && t_now - last_note < 0.25) return;
+        if (n == 0) base_done = done_now;
         const double dt = last_note < 0 ? 0 : t_now - last_note;
         last_note = t_now;
         if (n == kSamples) head = (head + 1) % kSamples, n--;
@@ -51,7 +53,9 @@ struct ProgressClock {
         const int last = (head + n - 1) % kSamples;
         const double span = t[last] - t[head];
         if (done[last] >= total) return 0;
-        if (span < kFirst || done[last] <= done[head] || (double)done[last] < (double)total * kMinShare) return -1;
+        const size_t session_total = total > base_done ? total - base_done : total;
+        const size_t session_done = done[last] > base_done ? done[last] - base_done : 0;
+        if (span < kFirst || done[last] <= done[head] || (double)session_done < (double)session_total * kMinShare) return -1;
         const double rate = (double)(done[last] - done[head]) / span;
         return (double)(total - done[last]) / rate;
     }
@@ -64,13 +68,22 @@ inline std::string with_commas(size_t v) {
     return s;
 }
 
-/// "about 40 s left": up to 5 s under a minute, whole minutes above; empty when unknown
+/// "about 40 s left" or "about 1 min 30 s left"; empty when unknown
 inline std::string left_text(double secs) {
     if (secs < 0) return "";
     char b[48];
     if (secs < 10) return "a few seconds left";
-    if (secs < 55) snprintf(b, sizeof b, "about %d s left", (int)((secs + 4.999) / 5) * 5);
-    else snprintf(b, sizeof b, "about %d min left", secs < 90 ? 1 : (int)(secs / 60 + 0.5));
+    const int rounded = (int)((secs + 4.999) / 5) * 5;
+    if (rounded < 60) {
+        snprintf(b, sizeof b, "about %d s left", rounded);
+    } else if (rounded < 600) {
+        const int mins = rounded / 60;
+        const int rem_s = rounded % 60;
+        if (rem_s > 0) snprintf(b, sizeof b, "about %d min %d s left", mins, rem_s);
+        else snprintf(b, sizeof b, "about %d min left", mins);
+    } else {
+        snprintf(b, sizeof b, "about %d min left", (int)(secs / 60 + 0.5));
+    }
     return b;
 }
 
