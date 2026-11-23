@@ -426,13 +426,16 @@ class Window(QWidget):
     def line(self, line):
         if line.startswith("@@step "):
             parts = line.split(" ", 2)
-            self.show_steps(int(parts[1]))
+            if len(parts) > 1 and parts[1].isdigit():
+                self.show_steps(int(parts[1]))
             if len(parts) > 2:
                 self.status.setText(parts[2])
         elif line.startswith("@@progress "):
-            a, b = (int(x) for x in line.split()[1:3])
-            self.bar.setRange(0, max(1, b))
-            self.bar.setValue(a)
+            nums = line.split()[1:3]
+            if len(nums) == 2 and all(x.isdigit() for x in nums):
+                a, b = int(nums[0]), int(nums[1])
+                self.bar.setRange(0, max(1, b))
+                self.bar.setValue(a)
         elif line.startswith("@@done "):
             self.built = line.split(" ", 1)[1].strip()
         elif line.startswith("@@error "):
