@@ -1973,10 +1973,17 @@ bool texture_dirty(Texture& tex, uint32_t gen, Ranges& out) {
     return !out.empty();
 }
 
-uint64_t destroy_gen = 1;   // (bumped when textures go: what was resolved to them goes stale)
+std::atomic<uint64_t> destroy_gen{1};   // (bumped when textures go: what was resolved to them goes stale)
+constexpr size_t kGoneLog = 1024;
+constexpr uint32_t kGoneAll = ~0u;
+std::array<std::atomic<uint32_t>, kGoneLog> gone_log{};
+void gone_note(uint32_t id) {
+    const uint64_t g = destroy_gen.fetch_add(1, std::memory_order_relaxed) + 1;
+    gone_log[g & (kGoneLog - 1)].store(id ? id : kGoneAll, std::memory_order_release);
+}
 
 void destroy_later(Texture& tex) {
-    destroy_gen++;
+    gone_note(tex.id);
     Dead d{tex.last_value, tex.image, tex.allocation, {}, {}};
     if (tex.pool_key && tex.allocation && tex.sparse_chunks.empty() && pool_cap()) {   // (a render target's: to the pool, its views too)
         d.pool_key = tex.pool_key, d.view_map = std::move(tex.views), d.bytes = tex.bytes + tex.pad;
@@ -2613,7 +2620,15 @@ Texture* texture_get(const nvn_tex* t, bool for_sampling) {
 }
 
 uint64_t texture_destroy_generation() {
-    return destroy_gen;
+    return destroy_gen.load(std::memory_order_acquire);
+}
+bool texture_still_resolved(uint32_t id, uint64_t since, uint64_t now) {
+    if (!id || now - since >= kGoneLog / 2) return false;
+    for (uint64_t g = since + 1; g <= now; g++) {
+        const uint32_t went = gone_log[g & (kGoneLog - 1)].load(std::memory_order_acquire);
+        if (went == id || went == kGoneAll) return false;
+    }
+    return true;
 }
 
 uint32_t texture_epoch() {
@@ -4240,6 +4255,7 @@ void compact_step(uint64_t completed) {
         for (auto& kv : t->views)
             if (kv.second) compact.old_views.push_back(kv.second);
         t->views.clear();   // (made again when next asked for)
+        gone_note(t->id);
         t->image = image;
         t->last_value = std::max(t->last_value, rec_value);   // (its end, if it goes now, waits for the copy too)
         compact.moved++, compact.moved_bytes += t->bytes + t->pad;
@@ -4260,7 +4276,6 @@ void compact_step(uint64_t completed) {
         return;
     }
     full_barrier(cmd, "compaction: after the copies");
-    destroy_gen++;   // (what was resolved to the moved textures' views is stale)
     compact.in_pass = true, compact.value = rec_value;
 }
 
@@ -4292,7 +4307,7 @@ void texture_frame(uint64_t completed) {
     if (const int64_t d = st_deferred_frame.exchange(0, std::memory_order_relaxed)) {
         // (the views and descriptor sets resolved to the placeholder this frame go stale, as when textures go: the next frame
         // looks those textures up again, and uploads them)
-        destroy_gen++;
+        gone_note(kGoneAll);
         static int told;
         if (told++ < 40 || st_deferred.load(std::memory_order_relaxed) % 2000 < d)
             logf("vk: %lld new ASTC textures left for a later frame (this frame's uploads took their budget; %lld so far)", (long long)d,

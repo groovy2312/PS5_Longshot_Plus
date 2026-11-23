@@ -3302,6 +3302,7 @@ struct HandleHit {
     uint32_t version; // (the slot's, when resolved)
     uint32_t tex_epoch;   // (the texture epoch it was last touched in)
     bool sampling;    // (its use reads the texture's contents)
+    uint32_t tex_id;      // (the texture's creation number, 0 for none: texture_still_resolved)
 };
 TLS_OBJECT(handle_hits, FlatMap<uint64_t, HandleHit>)
 // (longshot) RX_VK_TRACE_TEX=<w>x<h>,...: each draw sampling a texture of that size is logged with its state, every 30th frame, 600 lines: a
@@ -3357,7 +3358,11 @@ VkImageView texture_view_of(uint32_t handle, VkImageViewType want, ViewUse use, 
         else if (it->second.destroy_gen != dgen) st_gen++;
         else st_hit++;
     }
-    if (it != handle_hits().end() && it->second.version == version && it->second.destroy_gen == dgen) {
+    static const bool exact_stale = [] { const char* e = getenv("RX_VK_EXACT_STALE"); return !(e && atoi(e) == 0); }();
+    if (it != handle_hits().end() && it->second.version == version &&
+        (it->second.destroy_gen == dgen ||
+         (exact_stale && texture_still_resolved(it->second.tex_id, it->second.destroy_gen, dgen)))) {
+        it->second.destroy_gen = dgen;
         if (it->second.tex && it->second.tex_epoch != texture_epoch()) {   // (once a submission: its age and contents)
             if (!texture_touch_quick(it->second.tex, it->second.sampling)) {
                 ParLock lk;
@@ -3395,7 +3400,7 @@ VkImageView texture_view_of(uint32_t handle, VkImageViewType want, ViewUse use, 
                      has_view && v.set_format ? v.format : 0, has_view && v.set_target ? v.target : -1, (int)want, (int)use);
         }
     }
-    handle_hits()[key] = {view, tex, dgen, level, version, texture_epoch(), use == ViewUse::Sample || use == ViewUse::Storage};
+    handle_hits()[key] = {view, tex, dgen, level, version, texture_epoch(), use == ViewUse::Sample || use == ViewUse::Storage, tex ? tex->id : 0u};
     if (tex_out) *tex_out = tex;
     if (level_out) *level_out = level;
     return view;
