@@ -94,6 +94,9 @@ En **`v0.3.3-plus`**, el juego ya **no depende de un único nombre de archivo fi
 
 ## Resumen de Novedades Técnicas en `v0.3.3-plus`
 
+* **Invalidación Exacta de Handles y Retención de Caché de Descriptores (`RX_VK_EXACT_STALE`, `#2343`)**: Registra el ID individual de cada textura eliminada o compactada (`gone_note`) y valida los *handles* en caché mediante `texture_still_resolved` en lugar de invalidar globalmente todos los descriptores del cuadro, reduciendo picos de CPU al cambiar de zona o cerrar menús en PS5.
+* **Perfil Interno `Auto (Esta PS5)` Adaptado por Hardware (`PS5 Fat/Slim` vs `PS5 Pro`)**: Configura automáticamente **`1280x720` con `35%` de nitidez** en **PS5 / PS5 Slim** (garantizando sesiones largas sin cierres por memoria al entrar y salir de zonas abiertas) y **`1920x1080 (native)` con `30%` de nitidez** en **PS5 Pro**, junto con `Modo TV`, `AMD FSR 3.1 / FSR 4`, resolución interna `Auto (dinámica)` y `FG integrada 2x`.
+* **Perfiles Completos de Entorno en el Builder (`ps5/builder/pipeline.py`)**: Incluye de serie `HOS_PS5_ZERO_FIRST=1`, `RX_VK_IMPORT_CHUNK_MB=4`, `RX_VK_IMPORT_SPAN_MB=16`, `RX_VK_EXACT_STALE=1` y presupuestos ajustados de render y reserva en `longshot_env.txt` tanto para **PS5 / PS5 Slim** (`2560`/`2200 MiB`) como para **PS5 Pro** (`3584`/`1600 MiB`).
 * **Corrección de texturas en Zora's Domain congelado (`#2179`)**: Mapea las cargas globales de 128 bits que cruzan el límite de registros reservados (`R206–R207` → registros extendidos `462–463`) en el traductor Ampere-a-Maxwell (`lower_to_maxwell.h`), eliminando los parches magenta y verdes en rocas y nieve con Link Adulto.
 * **Nueva Interfaz Oscura PS5 e Icono Retina macOS (`longshot.icns`)**: Rediseño completo de `ps5/builder/app.py` con tema oscuro estilo PlayStation 5, insignia con logo oficial, cuadrícula alineada multiplataforma, validación segura de índices de progreso y generación automática del icono `.icns` desde `icon0.png`.
 * **Compilación Oficial en 4 Plataformas**: Paquetes `.app` nativos separados para **macOS Apple Silicon (`arm64`)** y **macOS Intel (`x64`)** junto con **Linux x64 (AppImage)** y **Windows x64 (ZIP portátil)**, cada uno con su archivo `.sha256`.
@@ -115,7 +118,7 @@ En **`v0.3.3-plus`**, el juego ya **no depende de un único nombre de archivo fi
 | **Reserva libre para el juego (`HOS_PS5_TEX_RESERVE_MB`)** | `2,200 MiB` | `1,600 MiB` |
 | **Retención de texturas/targets (`RX_VK_EVICT_MIN_UNUSED`)** | `30` presents | `60` presents |
 | **Rendimiento estimado (Bosque Kokiri 1080p + FG 2x)** | ~45 FPS mostrados | ~63–68 FPS mostrados |
-| **Resolución recomendada** | `1920x1080` (o `1280x720` en sesiones largas) | `1920x1080` / `2560x1440` / `3840x2160` |
+| **Salida y nitidez por defecto (`Auto (Esta PS5)`)** | `1280x720` (`35%` nitidez — sesiones largas sin cierres) | `1920x1080 (native)` (`30%` nitidez; soporta hasta 4K) |
 | **Upscaler y Frame Generation por defecto** | AMD FSR 3.1 (o FSR 4.1.2 Lite) + Built-in FG 2x | AMD FSR 3.1 (o FSR 4.1.2 Lite) + Built-in FG 2x |
 * **Corrección de cuelgues atómicos de cómputo RDNA 2 / RADV (`#2088`):** Serializa los bucles atómicos de punto flotante por subgrupo mediante `OpGroupNonUniformElect` (`SubgroupCasLoop`), eliminando cuelgues de GPU de 2 segundos en pases de iluminación de templos.
 * **Escáner dedicado de ROMs (`/data/longshotplus/roms/`) y validación de Title ID (`ps5_is_oot_nup`):** Detecta automáticamente cualquier `.nup` válido (`0400486024DEC000`) en `/data/longshotplus/roms/` o rutas alternativas.

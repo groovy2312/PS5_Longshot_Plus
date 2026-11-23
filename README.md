@@ -64,6 +64,9 @@ Automatic ROM scanning verifies the official *Ocarina of Time* Title ID (`040048
 
 ## What's New in `v0.3.3-plus`
 
+* **Exact Handle Staleness & Descriptor Cache Retention (`RX_VK_EXACT_STALE`, `#2343`)**: Tracks individual destroyed or compacted texture IDs (`gone_note`) and validates cached descriptor handles via `texture_still_resolved` instead of globally invalidating every texture handle per frame, reducing CPU spikes during zone transitions and menu closures on PS5.
+* **Hardware-Aware `Auto (This PS5)` Preset (`PS5 Fat/Slim` vs `PS5 Pro`)**: Automatically configures **`1280x720` with `35%` sharpness** on **PS5 / PS5 Slim** (preventing memory pressure during extended multi-zone play sessions) and **`1920x1080 (native)` with `30%` sharpness** on **PS5 Pro**, paired with `TV Mode`, `AMD FSR 3.1 / FSR 4`, `Auto` dynamic internal resolution, and `2x` Built-in Frame Generation.
+* **Complete Builder Environment Profiles (`ps5/builder/pipeline.py`)**: Embeds `HOS_PS5_ZERO_FIRST=1`, `RX_VK_IMPORT_CHUNK_MB=4`, `RX_VK_IMPORT_SPAN_MB=16`, `RX_VK_EXACT_STALE=1`, and tailored renderer/reserve memory budgets directly into `longshot_env.txt` for both **PS5 / PS5 Slim** (`2560`/`2200 MiB`) and **PS5 Pro** (`3584`/`1600 MiB`).
 * **Frozen Zora's Domain Texture & Register Boundary Fix (`#2179`)**: Maps 128-bit global loads straddling the reserved register boundary (`R206–R207` → extended registers `462–463`) in the Ampere-to-Maxwell shader translator (`lower_to_maxwell.h`), eliminating pink and green rock/snow artifacts in Adult Link's frozen Zora's Domain.
 * **PS5 Dark Theme Builder UI & Retina macOS Icon (`longshot.icns`)**: Redesigned `ps5/builder/app.py` with a PlayStation 5 dark theme, official logo badge, aligned multi-platform grid layout, bounds-checked step/progress parsing, and automatic Retina `.icns` icon generation from `icon0.png`.
 * **4-Platform Cross-Platform Release Matrix**: Native `.app` bundles for **macOS Apple Silicon (`arm64`)** and **macOS Intel (`x64`)** alongside **Linux x64 (AppImage)** and **Windows x64 (Portable ZIP)**, each with standalone SHA-256 checksums.
@@ -848,7 +851,7 @@ By default, **PS5 Longshot Plus** runs safely with **AMD FSR 3.1**. To unlock **
 | **Free Game Reserve (`HOS_PS5_TEX_RESERVE_MB`)** | `2,200 MiB` | `1,600 MiB` |
 | **Texture/Target Retention (`RX_VK_EVICT_MIN_UNUSED`)** | `30` presents | `60` presents |
 | **Estimated Performance (Kokiri Forest 1080p + FG 2x)** | ~45 FPS shown | ~63–68 FPS shown |
-| **Recommended Output Resolution** | `1920x1080` (or `1280x720` for long sessions) | `1920x1080` / `2560x1440` / `3840x2160` |
+| **Default `Auto (This PS5)` Output & Sharpness** | `1280x720` (`35%` sharpness — zero-crash long sessions) | `1920x1080 (native)` (`30%` sharpness; supports up to 4K) |
 | **Default Upscaler & Frame Generation** | AMD FSR 3.1 (or FSR 4.1.2 Lite) + Built-in FG 2x | AMD FSR 3.1 (or FSR 4.1.2 Lite) + Built-in FG 2x |
 
 ### What is new in v0.3.3-plus
