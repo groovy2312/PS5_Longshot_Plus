@@ -198,7 +198,8 @@ def stage(system, a):
     macos = system.startswith("macos-")
     base_out = os.path.join(a.out, system)
     shutil.rmtree(base_out, ignore_errors=True)
-    top = os.path.join(base_out, "PS5LongshotPlusBuilder.app", "Contents", "MacOS") if macos else os.path.join(base_out, "PS5LongshotPlusBuilder")
+    app_name = "PS5LongshotPlusBuilder-AppleSilicon.app" if system == "macos-arm64" else "PS5LongshotPlusBuilder-Intel.app"
+    top = os.path.join(base_out, app_name, "Contents", "MacOS") if macos else os.path.join(base_out, "PS5LongshotPlusBuilder")
     os.makedirs(top)
     vulkan = os.environ.get("PS5_VULKAN") or os.path.join(ROOT, "ps5", "deps", "PS5_Vulkan")
 
@@ -280,11 +281,11 @@ def stage(system, a):
         contents = os.path.dirname(top)
         os.makedirs(os.path.join(contents, "Resources"), exist_ok=True)
         shutil.copy2(os.path.join(ROOT, "ps5", "sce_sys", "icon0.png"), os.path.join(contents, "Resources", "longshot.png"))
-        open(os.path.join(contents, "Info.plist"), "w").write('<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://apple.com"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>PS5LongshotPlusBuilder</string><key>CFBundleIdentifier</key><string>dev.longshot.ps5builder</string><key>CFBundleName</key><string>PS5 Longshot Plus Builder</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>%s</string><key>NSHighResolutionCapable</key><true/></dict></plist>\n' % ver)
+        open(os.path.join(contents, "Info.plist"), "w").write('<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://apple.com"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>PS5LongshotPlusBuilder</string><key>CFBundleIdentifier</key><string>dev.longshot.ps5builder</string><key>CFBundleName</key><string>%s</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>%s</string><key>NSHighResolutionCapable</key><true/></dict></plist>\n' % ("PS5 Longshot Plus Builder (Apple Silicon)" if system == "macos-arm64" else "PS5 Longshot Plus Builder (Intel)", ver))
         top = os.path.dirname(contents)
         subprocess.run(["codesign", "--force", "--deep", "-s", "-", top], check=False)
     with open(os.path.join(os.path.dirname(top) if macos else top, "README.txt"), "w", newline="\r\n" if system == "windows-x64" else "\n") as f:
-        f.write(README % {"version": ver, "start": "PS5LongshotPlusBuilder.app" if macos else ("the AppImage" if linux else "PS5LongshotPlusBuilder.exe")})
+        f.write(README % {"version": ver, "start": ("PS5LongshotPlusBuilder-AppleSilicon.app" if system == "macos-arm64" else "PS5LongshotPlusBuilder-Intel.app") if macos else ("the AppImage" if linux else "PS5LongshotPlusBuilder.exe")})
     return top, ver
 
 
