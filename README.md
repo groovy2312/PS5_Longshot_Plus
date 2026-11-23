@@ -114,11 +114,10 @@ game**, by the **PS5 Longshot Plus Builder**, then copied to the console.
 
 | Your computer | File |
 |---|---|
-| Linux | `PS5LongshotPlusBuilder-<version>-x86_64.AppImage` |
-| Windows | `PS5LongshotPlusBuilder-<version>-windows-x64.zip` (a portable folder: no installer) |
-
-| macOS (Apple Silicon) | `PS5LongshotPlusBuilder-<version>-macos-arm64.zip` (`PS5LongshotPlusBuilder.app`) |
-| macOS (Intel) | `PS5LongshotPlusBuilder-<version>-macos-x64.zip` (`PS5LongshotPlusBuilder.app`) |
+| **Linux (x64)** | `PS5LongshotPlusBuilder-<version>-x86_64.AppImage` |
+| **Windows (x64)** | `PS5LongshotPlusBuilder-<version>-windows-x64.zip` (a portable folder: no installer) |
+| **macOS (Apple Silicon)** | `PS5LongshotPlusBuilder-<version>-macos-arm64.zip` (`PS5LongshotPlusBuilder.app`) |
+| **macOS (Intel)** | `PS5LongshotPlusBuilder-<version>-macos-x64.zip` (`PS5LongshotPlusBuilder.app`) |
 
 Each file has a `.sha256` beside it. There is no PC version of the game here.
 
@@ -136,7 +135,7 @@ change it). This repository does not explain how to set that up.
 
 | | |
 |---|---|
-| **System** | 64-bit Windows 10 or 11, or 64-bit Linux with glibc 2.35 or newer (Ubuntu 22.04, Debian 12, Fedora, Arch, SteamOS). |
+| **System** | 64-bit Windows 10 or 11, 64-bit Linux with glibc 2.35 or newer (Ubuntu 22.04, Debian 12, Fedora, Arch, SteamOS), or macOS 12 Monterey or newer (Apple Silicon `arm64` & Intel `x64`). |
 | **Memory** | 2 GB free at the least: set **Memory to use** to what your computer has free (2 or 3 GB on an 8 GB computer). Less memory takes longer: measured 81 minutes within 3 GB and 132 within 2 GB on a 16-thread PC. **Automatic** takes what is free and builds faster with more. |
 | **Storage** | About 6 GB free where you build, and 1 GB for the builder itself. |
 | **Time** | 40 to 70 minutes on a 6-core computer, most of it the compile step. A second build for the other console model takes seconds. |
@@ -148,8 +147,8 @@ The builder carries its own compiler, Python and the ready-built parts of the ti
 
 1. **Start the builder.**
    - Linux: make the AppImage executable (`chmod +x PS5LongshotPlusBuilder-*.AppImage`) and start it.
-   - Windows: unpack the zip anywhere, open the `LongshotPS5Builder` folder and start `PS5LongshotPlusBuilder.exe`.
-     Keep the folder whole: the program needs what is beside it.
+   - Windows: unpack the zip anywhere, open the `LongshotPS5Builder` folder and start `PS5LongshotPlusBuilder.exe`. Keep the folder whole: the program needs what is beside it.
+   - macOS (Apple Silicon & Intel): unzip the archive (`macos-arm64` or `macos-x64`). If macOS Gatekeeper blocks the unsigned app, run `xattr -cr PS5LongshotPlusBuilder.app` in Terminal, then open `PS5LongshotPlusBuilder.app`.
 2. **Game file:** choose your `.nup`.
 3. **Build into:** choose a folder on your computer.
 4. **Console:** choose your model. The folder is built for one of them.

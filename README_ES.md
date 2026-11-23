@@ -134,3 +134,17 @@ En **`v0.3.3-plus`**, el juego ya **no depende de un único nombre de archivo fi
 - **Builders Nativos para macOS e Interfaz Oscura PS5:** Añade paquetes `.app` autónomos para `macos-arm64` (Apple Silicon) y `macos-x64` (Intel) con Python 3.13, PyQt6, LLVM/Clang 23, herramientas Mach-O, icono Retina `longshot.icns`, rediseño oscuro estilo PS5 y corrección gráfica de Zora's Domain (`#2179`).
 - **Memoria y Sincronización PS5 (`#68`, `#74`, `#75`, `#2194`, `#2258`):** Puesta a cero previa al mapeo (`HOS_PS5_ZERO_FIRST=1`), *chunks* de importación GPU de 4 MB (`+200–330 MiB` libres en PS5 Fat/Slim), búsqueda O(1) de *mutex* por índice (`HOS_MUTEX_IX=1`), decodificación ASTC rápida vía LDS, Watchdog Dual (`crash_trace.txt`) y `PS5_PayloadSDK` (`55a2de04`).
 - **Regeneración Inicial de Shaders:** Al actualizar a `v0.3.3-plus`, el Builder invalida una sola vez `longshot-ps5-work` debido al nuevo sello del SDK y memoria Vulkan, regenerando los ~38,809 *shaders* conocidos; las siguientes compilaciones vuelven a tardar segundos.
+
+
+---
+
+## Descarga y Ejecución Multiplataforma (Windows, Linux y macOS)
+
+Descarga el paquete correspondiente a tu arquitectura desde [**Releases (`groovy2312/PS5_Longshot_Plus`)**](https://github.com) (cada archivo incluye su suma de verificación `.sha256`):
+
+| Sistema Operativo | Paquete Oficial | Instrucciones de Inicio |
+|---|---|---|
+| **Windows (x64)** | `PS5LongshotPlusBuilder-<version>-windows-x64.zip` | Descomprime toda la carpeta y ejecuta `PS5LongshotPlusBuilder.exe` (mantén todos los archivos juntos). |
+| **Linux (x64)** | `PS5LongshotPlusBuilder-<version>-x86_64.AppImage` | Otorga permisos con `chmod +x PS5LongshotPlusBuilder-*.AppImage` y ejecútalo. |
+| **macOS (Apple Silicon)** | `PS5LongshotPlusBuilder-<version>-macos-arm64.zip` | Descomprime `PS5LongshotPlusBuilder.app`. Si Gatekeeper muestra aviso, ejecuta `xattr -cr PS5LongshotPlusBuilder.app` y ábrela. |
+| **macOS (Intel)** | `PS5LongshotPlusBuilder-<version>-macos-x64.zip` | Descomprime `PS5LongshotPlusBuilder.app`. Si Gatekeeper muestra aviso, ejecuta `xattr -cr PS5LongshotPlusBuilder.app` y ábrela. |
