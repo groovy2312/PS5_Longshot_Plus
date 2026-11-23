@@ -50,8 +50,8 @@ LLVM_KEEP = {
     # (bin/clang.exe there is llvm-mingw's wrapper, which picks a MinGW target from its own name: clang-23.exe is the compiler)
     "windows-x64": ["bin/clang-23.exe", "bin/ld.lld.exe", "bin/llvm-nm.exe", "bin/libLLVM-23.dll", "bin/libclang-cpp.dll",
                     "bin/libc++.dll", "bin/libunwind.dll", "bin/libwinpthread-1.dll", "lib/clang/23/include", "LICENSE.TXT"],
-    "macos-arm64": ["bin/clang-23", "bin/clang", "bin/lld", "bin/ld.lld", "bin/llvm-nm", "lib", "LICENSE.TXT"],
-    "macos-x64": ["bin/clang-23", "bin/clang", "bin/lld", "bin/ld.lld", "bin/llvm-nm", "lib", "LICENSE.TXT"],
+    "macos-arm64": ["bin/clang-23", "bin/clang", "bin/lld", "bin/ld.lld", "bin/llvm-nm", "lib/clang/23/include", "LICENSE.TXT"],
+    "macos-x64": ["bin/clang-23", "bin/clang", "bin/lld", "bin/ld.lld", "bin/llvm-nm", "lib/clang/23/include", "LICENSE.TXT"],
 }
 NATIVE_SOURCES = ("native_app_builder.cpp", "self_container.cpp", "elf_object.cpp", "sce_module_writer.cpp")
 ZLIB_SOURCES = ("adler32.c", "crc32.c", "inffast.c", "inflate.c", "inftrees.c", "zutil.c", "trees.c", "deflate.c", "compress.c", "uncompr.c")
@@ -106,7 +106,7 @@ def unpack(archive, to):
             z.extractall(tmp)
     else:
         with tarfile.open(archive) as t:
-            t.extractall(tmp, filter="tar")
+            t.extractall(tmp, filter="fully_trusted")
     inner = os.listdir(tmp)
     os.replace(os.path.join(tmp, inner[0]) if len(inner) == 1 else tmp, to)
     shutil.rmtree(tmp, ignore_errors=True)
@@ -205,7 +205,7 @@ def stage(system, a):
     # ---- Python and its packages ----
     py_key = "python-linux" if linux else (system.replace("macos-", "python-macos-") if macos else "python-windows")
     with tarfile.open(fetch(py_key, a.cache)) as t:
-        t.extractall(top, filter="tar")
+        t.extractall(top, filter="fully_trusted")
     if linux:
         run([os.path.join(top, "python", "bin", "python3"), "-I", "-m", "pip", "install", "--no-warn-script-location",
              "--disable-pip-version-check", "--no-compile", "-q"] + PACKAGES)
@@ -250,6 +250,10 @@ def stage(system, a):
             shutil.copy2(src, dst, follow_symlinks=False)
     if system == "windows-x64":
         shutil.copy2(os.path.join(top, "tools", "bin", "clang-23.exe"), os.path.join(top, "tools", "bin", "clang.exe"))
+    elif macos:
+        for f in os.listdir(os.path.join(llvm, "lib")):
+            if f.endswith(".dylib"):
+                shutil.copy2(os.path.join(llvm, "lib", f), os.path.join(top, "tools", "lib", f), follow_symlinks=False)
 
     # ---- the window, the build, the kit, the system's own programs ----
     os.makedirs(os.path.join(top, "app"))
