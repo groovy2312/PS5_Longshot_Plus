@@ -151,3 +151,72 @@ Descarga el paquete correspondiente a tu arquitectura desde [**Releases (`groovy
 | **Linux (x64)** | `PS5LongshotPlusBuilder-<version>-x86_64.AppImage` | Otorga permisos con `chmod +x PS5LongshotPlusBuilder-*.AppImage` y ejecútalo. |
 | **macOS (Apple Silicon)** | `PS5LongshotPlusBuilder-<version>-macos-arm64.zip` | Descomprime `PS5LongshotPlusBuilder.app`. Si Gatekeeper muestra aviso, ejecuta `xattr -cr PS5LongshotPlusBuilder.app` y ábrela. |
 | **macOS (Intel)** | `PS5LongshotPlusBuilder-<version>-macos-x64.zip` | Descomprime `PS5LongshotPlusBuilder.app`. Si Gatekeeper muestra aviso, ejecuta `xattr -cr PS5LongshotPlusBuilder.app` y ábrela. |
+
+---
+
+## Instalación y Uso en PlayStation 5
+
+1. **Prepara tu copia legal del juego:** Programa `0400486024DEC000`, actualización **`v131072`** (`build e0f3ccfa`) en formato `.nup`.
+2. **Compila la carpeta `PPSA99198` en tu PC/Mac:**
+   * Abre **PS5 Longshot Plus Builder**, selecciona tu archivo `.nup`, la carpeta de salida y tu modelo de consola (**PS5 / PS5 Slim** o **PS5 Pro**).
+   * Pulsa **Build**. Al finalizar obtendrás la carpeta **`PPSA99198`** (**nunca la compartas**, contiene código derivado de tu juego).
+3. **Copia los archivos a la PS5 por FTP (puerto `2121`):**
+   * Sube la carpeta completa **`PPSA99198`** a `/data/homebrew/PPSA99198/` (o usa el botón **Send to PS5** del Builder).
+   * Copia tu archivo `.nup` a `/data/longshotplus/roms/oot.nup`.
+4. **Inicia el juego:** Abre **LONGSHOT PLUS** desde la pantalla principal de la PS5 o tu lanzador homebrew. La primera visita a cada zona compila sus *shaders* y los guarda en caché; las siguientes visitas serán fluidas.
+
+---
+
+## Menú Interno del Juego y Controles DualSense
+
+* **Abrir y cerrar el menú interno:** Pulsa **Clic en el Panel Táctil (Touchpad) + Options** al mismo tiempo.
+* **Navegar por el menú:** `L1` / `R1` cambian de pestaña, la cruceta selecciona filas, **Círculo** confirma/cambia opciones y **Equis** retrocede o cierra el menú.
+
+### Opciones principales en PS5 (`Gráficos`)
+* **Perfil de calidad (`Auto (Esta PS5)`):** Detecta automáticamente si estás ejecutando el perfil **PS5 Fat / Slim** (`1280x720`, `35%` nitidez para sesiones largas sin cierres) o **PS5 Pro** (`1920x1080 (native)`, `30%` nitidez).
+* **Resolución de salida:** `1280x720`, `1920x1080`, `2560x1440` o `3840x2160` (los cambios aplican tras reiniciar el título).
+* **Upscaler:** `AMD FSR 3.1` por defecto en todas las PS5, o `AMD FSR 4` automático si copias los pesos `lite/`.
+* **Generación de cuadros:** `2x (game at 30 fps)` activada de serie mediante **FG integrada** (`PS5_MihawkGen`).
+
+### Controles DualSense por defecto
+
+| Nintendo Switch | DualSense (PS5) |
+|---|---|
+| **A / B** | **Círculo / Equis** |
+| **X / Y** | **Triángulo / Cuadrado** |
+| **L / R** | **L1 / R1** |
+| **ZL / ZR** | **L2 / R2** |
+| **− / +** | **Clic en Touchpad / Options** |
+
+---
+
+## Opcional: Activar AMD FSR 4.1.2 (Lite) en PS5
+
+Por defecto, **PS5 Longshot Plus** utiliza **AMD FSR 3.1**. Si deseas activar **AMD FSR 4.1.2 (Lite INT8)** en tu PS5:
+1. Descarga **`beamng-fsr4-linux-0.3.0.tar.gz`** desde [Mob1K7105/beamng-fsr4-linux Releases](https://github.com).
+2. Descomprime el archivo y extrae la carpeta **`lite/`** que contiene los pesos INT8.
+3. Súbela por FTP a tu PS5 en la ruta: `/data/homebrew/PPSA99198/fsr4/lite/`.
+4. Al iniciar el juego, **PS5 Longshot Plus** detectará los pesos automáticamente y cambiará el escalador a **AMD FSR 4**.
+
+---
+
+## Uso de Mods (`RomFS`)
+
+Coloca tus mods en `/data/homebrew/PPSA99198/mods/<nombre_del_mod>/romfs/...`.
+* Las carpetas que empiecen por `-` o `_` quedan desactivadas.
+* Si dos mods modifican el mismo archivo, prevalece el que se ordene al final alfabéticamente (usa prefijos como `01-...`, `02-...` para controlar el orden).
+* Solo se cargan mods de **RomFS** (los parches de `exefs` como `.pchtxt` o `.ips` no aplican porque el código del juego se recompila estáticamente en PC).
+
+---
+
+## Solución de Problemas Frecuentes
+
+* **El juego no aparece en la pantalla principal de la PS5:** Verifica que `eboot.bin` esté directamente dentro de `/data/homebrew/PPSA99198/eboot.bin` y que tu entorno homebrew (`etaHEN` / `ShadowMountPlus`) escanee `/data/homebrew/`.
+* **Se queda en pantalla negra antes de los logos:** Comprueba que tu archivo `.nup` esté en `/data/longshotplus/roms/oot.nup` y corresponda exactamente al programa `0400486024DEC000` actualización `v131072`.
+* **El Builder se detiene por falta de memoria en PC:** Baja el selector **Memory to use** a `2 GB` o `3 GB` y vuelve a pulsar **Build**; retomará la compilación desde donde se quedó.
+
+---
+
+## Licencia
+
+**PS5 Longshot Plus** es software libre bajo licencia **GNU General Public License v3.0 o posterior (`GPL-3.0-or-later`)**. *The Legend of Zelda* y *Ocarina of Time* son marcas registradas de Nintendo; este proyecto no incluye archivos ni claves del juego.
