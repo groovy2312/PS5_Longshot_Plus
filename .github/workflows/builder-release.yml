@@ -185,7 +185,7 @@ jobs:
   publish:
     name: Attach them to the release
     if: github.event_name == 'release'
-    needs: [check-linux, check-windows, package-macos-arm64, package-macos-x64]
+    needs: [package-linux-x64, package-windows-x64, package-macos-arm64, package-macos-x64]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
