@@ -1,6 +1,6 @@
 # PS5 Longshot Plus (`PPSA99198`) — Guía Oficial en Español
 
-**Port Nativo para PlayStation 5 y Builder Multiplataforma (Windows y Linux) — `v0.3.3-plus`**
+**Port Nativo para PlayStation 5 y Builder Multiplataforma (Windows, Linux y macOS) — `v0.3.3-plus`**
 
 > 🌐 **Idioma / Language:** [English (`README.md`)](README.md) · **Español (`README_ES.md`)**
 
@@ -94,6 +94,10 @@ En **`v0.3.3-plus`**, el juego ya **no depende de un único nombre de archivo fi
 
 ## Resumen de Novedades Técnicas en `v0.3.3-plus`
 
+* **Corrección de texturas en Zora's Domain congelado (`#2179`)**: Mapea las cargas globales de 128 bits que cruzan el límite de registros reservados (`R206–R207` → registros extendidos `462–463`) en el traductor Ampere-a-Maxwell (`lower_to_maxwell.h`), eliminando los parches magenta y verdes en rocas y nieve con Link Adulto.
+* **Nueva Interfaz Oscura PS5 e Icono Retina macOS (`longshot.icns`)**: Rediseño completo de `ps5/builder/app.py` con tema oscuro estilo PlayStation 5, insignia con logo oficial, cuadrícula alineada multiplataforma, validación segura de índices de progreso y generación automática del icono `.icns` desde `icon0.png`.
+* **Compilación Oficial en 4 Plataformas**: Paquetes `.app` nativos separados para **macOS Apple Silicon (`arm64`)** y **macOS Intel (`x64`)** junto con **Linux x64 (AppImage)** y **Windows x64 (ZIP portátil)**, cada uno con su archivo `.sha256`.
+
 * **Reloj en Tiempo Real (`Show clock` — `Off` / `12h` / `24h`)**: Nuevo selector en **Gameplay** que muestra la hora local del sistema en la esquina derecha de la barra superior del menú interno y en la esquina superior derecha del HUD (con separación automática respecto al contador de FPS).
 * **Soporte de `RX_VK_SKIP_CODE` en Compute Dispatches y Telemetría de `code_key`**: Extensión de `RX_VK_SKIP_CODE` (y registro de `its code:` en `RX_VK_SKIP_PROG`) para *compute dispatches*, permitiendo diagnosticar y aislar shaders de cómputo problemáticos en RDNA 2 (como `prog_key=53fcaee4dc45c6ee` en el Coliseo de los Monstruos).
 * **Perfil Mejorado para PS5 Pro (`13.2 GiB` de memoria directa)**: Presupuesto de renderizador ampliado a 3.5 GiB (`HOS_PS5_RENDER_MB=3584`), reserva de texturas ajustada (`HOS_PS5_TEX_RESERVE_MB=1600`) y mayor retención de texturas a 1024 texels (`RX_VK_EVICT_MIN_UNUSED=60`) sin afectar la estabilidad de PS5 Fat / Slim.
@@ -127,6 +131,6 @@ En **`v0.3.3-plus`**, el juego ya **no depende de un único nombre de archivo fi
 - **Mejoras de memoria y estabilidad upstream (`#2194`, `#2258`) + Watchdog Dual + `PS5_PayloadSDK` actualizado (`55a2de04`).**
 
 ### Notas Estructurales y de Plataforma (v0.3.3-plus)
-- **Builders Nativos para macOS:** Añade paquetes `.app` autónomos para `macos-arm64` (Apple Silicon) y `macos-x64` (Intel) con Python 3.13, PyQt6, LLVM/Clang 23 y herramientas Mach-O integradas.
+- **Builders Nativos para macOS e Interfaz Oscura PS5:** Añade paquetes `.app` autónomos para `macos-arm64` (Apple Silicon) y `macos-x64` (Intel) con Python 3.13, PyQt6, LLVM/Clang 23, herramientas Mach-O, icono Retina `longshot.icns`, rediseño oscuro estilo PS5 y corrección gráfica de Zora's Domain (`#2179`).
 - **Memoria y Sincronización PS5 (`#68`, `#74`, `#75`, `#2194`, `#2258`):** Puesta a cero previa al mapeo (`HOS_PS5_ZERO_FIRST=1`), *chunks* de importación GPU de 4 MB (`+200–330 MiB` libres en PS5 Fat/Slim), búsqueda O(1) de *mutex* por índice (`HOS_MUTEX_IX=1`), decodificación ASTC rápida vía LDS, Watchdog Dual (`crash_trace.txt`) y `PS5_PayloadSDK` (`55a2de04`).
 - **Regeneración Inicial de Shaders:** Al actualizar a `v0.3.3-plus`, el Builder invalida una sola vez `longshot-ps5-work` debido al nuevo sello del SDK y memoria Vulkan, regenerando los ~38,809 *shaders* conocidos; las siguientes compilaciones vuelven a tardar segundos.

@@ -1,6 +1,6 @@
 # PS5 Longshot Plus (`PPSA99198`)
 
-**PlayStation 5 Native Port & Cross-Platform Builder (Windows & Linux) — `v0.3.3-plus`**
+**PlayStation 5 Native Port & Cross-Platform Builder (Windows, Linux & macOS) — `v0.3.3-plus`**
 
 > 🌐 **Language / Idioma:** **English (`README.md`)** · [Español (`README_ES.md` — Guía Completa en Español)](README_ES.md)
 
@@ -64,6 +64,10 @@ Automatic ROM scanning verifies the official *Ocarina of Time* Title ID (`040048
 
 ## What's New in `v0.3.3-plus`
 
+* **Frozen Zora's Domain Texture & Register Boundary Fix (`#2179`)**: Maps 128-bit global loads straddling the reserved register boundary (`R206–R207` → extended registers `462–463`) in the Ampere-to-Maxwell shader translator (`lower_to_maxwell.h`), eliminating pink and green rock/snow artifacts in Adult Link's frozen Zora's Domain.
+* **PS5 Dark Theme Builder UI & Retina macOS Icon (`longshot.icns`)**: Redesigned `ps5/builder/app.py` with a PlayStation 5 dark theme, official logo badge, aligned multi-platform grid layout, bounds-checked step/progress parsing, and automatic Retina `.icns` icon generation from `icon0.png`.
+* **4-Platform Cross-Platform Release Matrix**: Native `.app` bundles for **macOS Apple Silicon (`arm64`)** and **macOS Intel (`x64`)** alongside **Linux x64 (AppImage)** and **Windows x64 (Portable ZIP)**, each with standalone SHA-256 checksums.
+
 * **Real-Time Clock (`Show clock` — `Off` / `12h` / `24h`)**: New option in **Gameplay** displaying the local system time in the top-right corner of the internal menu bar and the in-game HUD (automatically padded above the FPS counter when both are top-right).
 * **Compute Dispatch `RX_VK_SKIP_CODE` & Stage Code Telemetry**: Extended `RX_VK_SKIP_CODE` (and `RX_VK_SKIP_PROG` stage code logging) to compute dispatches to isolate and diagnose RDNA 2 compute shader hangs (such as Monster Coliseum `prog_key=53fcaee4dc45c6ee`).
 * **Enhanced PS5 Pro Profile (`13.2 GiB` Direct Memory)**: Expanded PS5 Pro builder profile (`HOS_PS5_RENDER_MB=3584`, `HOS_PS5_TEX_RESERVE_MB=1600`, `RX_VK_EVICT_MIN_UNUSED=60`) for 3.5 GiB renderer budget and sustained 1024-texel texture retention without affecting base PS5 / PS5 Slim stability.
@@ -113,7 +117,11 @@ game**, by the **PS5 Longshot Plus Builder**, then copied to the console.
 | Linux | `PS5LongshotPlusBuilder-<version>-x86_64.AppImage` |
 | Windows | `PS5LongshotPlusBuilder-<version>-windows-x64.zip` (a portable folder: no installer) |
 
-Each file has a `.sha256` beside it. There is no macOS builder, and no PC version of the game here.
+| macOS (Apple Silicon) | `PS5LongshotPlusBuilder-<version>-macos-arm64.zip` (`PS5LongshotPlusBuilder.app`) |
+
+| macOS (Intel) | `PS5LongshotPlusBuilder-<version>-macos-x64.zip` (`PS5LongshotPlusBuilder.app`) |
+
+Each file has a `.sha256` beside it. There is no PC version of the game here.
 
 ### What you need
 
@@ -852,6 +860,6 @@ By default, **PS5 Longshot Plus** runs safely with **AMD FSR 3.1**. To unlock **
 - **Upstream stability & memory fixes (`#2194`, `#2258`) + Dual Watchdog + updated `PS5_PayloadSDK` (`55a2de04`).**
 
 ### v0.3.3-plus Structural & Platform Notes
-- **macOS Native Builders:** Added `macos-arm64` (Apple Silicon) and `macos-x64` (Intel) `.app` bundles with Python 3.13, PyQt6, LLVM/Clang 23, and Mach-O tools.
+- **macOS Native Builders & PS5 Dark UI:** Added `macos-arm64` (Apple Silicon) and `macos-x64` (Intel) `.app` bundles with Python 3.13, PyQt6, LLVM/Clang 23, Mach-O tools, Retina `longshot.icns` icon, and the redesigned PS5 dark UI (`#2179` Zora's Domain shader fix included).
 - **PS5 Memory & Sync (`#68`, `#74`, `#75`, `#2194`, `#2258`):** Pre-map zeroing (`HOS_PS5_ZERO_FIRST=1`), 4 MB GPU import chunks (`+200–330 MiB` free on PS5 Fat/Slim), O(1) embedded mutex index (`HOS_MUTEX_IX=1`), fast LDS ASTC decode, Dual Watchdog (`crash_trace.txt`), and updated `PS5_PayloadSDK` (`55a2de04`).
 - **First-Build Shader Cache Rebuild:** Upgrading to `v0.3.3-plus` invalidates `longshot-ps5-work` once due to the updated SDK and Vulkan memory stamp, regenerating the ~38,809 known pipelines cleanly; subsequent builds take seconds.
