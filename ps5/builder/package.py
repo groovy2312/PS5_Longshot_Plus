@@ -280,9 +280,18 @@ def stage(system, a):
         os.chmod(launcher, os.stat(launcher).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     if macos:
         contents = os.path.dirname(top)
-        os.makedirs(os.path.join(contents, "Resources"), exist_ok=True)
-        shutil.copy2(os.path.join(ROOT, "ps5", "sce_sys", "icon0.png"), os.path.join(contents, "Resources", "longshot.png"))
-        open(os.path.join(contents, "Info.plist"), "w").write('<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://apple.com"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>PS5LongshotPlusBuilder</string><key>CFBundleIdentifier</key><string>dev.longshot.ps5builder</string><key>CFBundleName</key><string>%s</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>%s</string><key>NSHighResolutionCapable</key><true/></dict></plist>\n' % ("PS5 Longshot Plus Builder (Apple Silicon)" if system == "macos-arm64" else "PS5 Longshot Plus Builder (Intel)", ver))
+        res_dir = os.path.join(contents, "Resources")
+        os.makedirs(res_dir, exist_ok=True)
+        src_png = os.path.join(ROOT, "ps5", "sce_sys", "icon0.png")
+        shutil.copy2(src_png, os.path.join(res_dir, "longshot.png"))
+        iconset = os.path.join(a.cache, "longshot.iconset")
+        shutil.rmtree(iconset, ignore_errors=True)
+        os.makedirs(iconset, exist_ok=True)
+        for sz in (16, 32, 64, 128, 256, 512):
+            subprocess.run(["sips", "-s", "format", "png", "-z", str(sz), str(sz), src_png, "--out", os.path.join(iconset, "icon_%dx%d.png" % (sz, sz))], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+            subprocess.run(["sips", "-s", "format", "png", "-z", str(sz * 2), str(sz * 2), src_png, "--out", os.path.join(iconset, "icon_%dx%d@2x.png" % (sz, sz))], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        subprocess.run(["iconutil", "-c", "icns", iconset, "-o", os.path.join(res_dir, "longshot.icns")], check=False)
+        open(os.path.join(contents, "Info.plist"), "w").write('<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://apple.com"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>PS5LongshotPlusBuilder</string><key>CFBundleIconFile</key><string>longshot</string><key>CFBundleIdentifier</key><string>dev.longshot.ps5builder</string><key>CFBundleName</key><string>%s</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>%s</string><key>NSHighResolutionCapable</key><true/></dict></plist>\n' % ("PS5 Longshot Plus Builder (Apple Silicon)" if system == "macos-arm64" else "PS5 Longshot Plus Builder (Intel)", ver))
         top = os.path.dirname(contents)
         subprocess.run(["codesign", "--force", "--deep", "-s", "-", top], check=False)
     with open(os.path.join(os.path.dirname(top) if macos else top, "README.txt"), "w", newline="\r\n" if system == "windows-x64" else "\n") as f:
