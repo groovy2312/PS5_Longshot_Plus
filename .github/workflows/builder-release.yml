@@ -155,10 +155,44 @@ jobs:
           $p = Start-Process "$b\PS5LongshotPlusBuilder.exe" -ArgumentList "--cli", "--check" -Wait -PassThru
           if ($p.ExitCode) { throw "PS5LongshotPlusBuilder.exe --cli --check: exit $($p.ExitCode)" }
 
+  package-macos:
+    name: The macOS App Bundles (Apple Silicon & Intel)
+    needs: kit
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: actions/download-artifact@v5
+        with:
+          name: kit
+      - name: Unpack the kit
+        run: mkdir -p dist && tar -C dist -xf kit.tar && rm kit.tar
+      - name: Build macOS Apple Silicon (arm64) & Intel (x64)
+        run: |
+          python3 -m pip install --quiet pip
+          python3 -I ps5/builder/package.py --system macos-arm64
+          python3 -I ps5/builder/package.py --system macos-x64
+      - name: Verify macOS Apple Silicon bundle
+        run: |
+          shasum -a 256 -c dist/builder/*-macos-arm64.zip.sha256
+          mkdir -p /tmp/mac-test
+          ditto -x -k dist/builder/*-macos-arm64.zip /tmp/mac-test
+          /tmp/mac-test/PS5LongshotPlusBuilder.app/Contents/MacOS/PS5LongshotPlusBuilder --cli --check
+          QT_QPA_PLATFORM=offscreen /tmp/mac-test/PS5LongshotPlusBuilder.app/Contents/MacOS/python/bin/python3 -I -u /tmp/mac-test/PS5LongshotPlusBuilder.app/Contents/MacOS/app/app.py --self-test
+      - uses: actions/upload-artifact@v5
+        with:
+          name: builder-macos
+          path: |
+            dist/builder/*-macos-*.zip
+            dist/builder/*-macos-*.zip.sha256
+          compression-level: 0
+
   publish:
     name: Attach them to the release
     if: github.event_name == 'release'
-    needs: [check-linux, check-windows]
+    needs: [check-linux, check-windows, package-macos]
     runs-on: ubuntu-24.04
     permissions:
       contents: write

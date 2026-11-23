@@ -36,6 +36,9 @@ DOWNLOADS = {   # name: (url, sha256)
     "llvm-windows": (LLVM + "llvm-mingw-20261104-ucrt-x86_64.zip", "552191b5754c49a5a20723276a6fc56541ea1922c4c50b7b669022333fc1b40f"),
     "python-linux": (PYTHON + "cpython-3.13.18+20261110-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz", "f2d2199eb25880e07863b391cf7124e7ffa1338b0d65600dfcec117c4223a7fb"),
     "python-windows": (PYTHON + "cpython-3.13.18+20261110-x86_64-pc-windows-msvc-install_only_stripped.tar.gz", "2e0fed09d48989f64c9305da9ff2d37a41c0d13ab2aa6283405b2b620dfbf805"),
+    "llvm-macos": (LLVM + "llvm-mingw-20261104-ucrt-macos-universal.tar.xz", ""),
+    "python-macos-arm64": (PYTHON + "cpython-3.13.18+20261110-aarch64-apple-darwin-install_only_stripped.tar.gz", ""),
+    "python-macos-x64": (PYTHON + "cpython-3.13.18+20261110-x86_64-apple-darwin-install_only_stripped.tar.gz", ""),
     "zlib": ("https://github.com/madler/zlib/releases/download/v1.4/zlib-1.4.tar.gz", "02dd159783677a749c04adbdd02b55b8a2bcc7e054f51b76b549199a916ad584"),
     "appimagetool": ("https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage", "ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"),
 }
@@ -47,6 +50,8 @@ LLVM_KEEP = {
     # (bin/clang.exe there is llvm-mingw's wrapper, which picks a MinGW target from its own name: clang-23.exe is the compiler)
     "windows-x64": ["bin/clang-23.exe", "bin/ld.lld.exe", "bin/llvm-nm.exe", "bin/libLLVM-23.dll", "bin/libclang-cpp.dll",
                     "bin/libc++.dll", "bin/libunwind.dll", "bin/libwinpthread-1.dll", "lib/clang/23/include", "LICENSE.TXT"],
+    "macos-arm64": ["bin/clang-23", "bin/clang", "bin/lld", "bin/ld.lld", "bin/llvm-nm", "lib", "LICENSE.TXT"],
+    "macos-x64": ["bin/clang-23", "bin/clang", "bin/lld", "bin/ld.lld", "bin/llvm-nm", "lib", "LICENSE.TXT"],
 }
 NATIVE_SOURCES = ("native_app_builder.cpp", "self_container.cpp", "elf_object.cpp", "sce_module_writer.cpp")
 ZLIB_SOURCES = ("adler32.c", "crc32.c", "inffast.c", "inflate.c", "inftrees.c", "zutil.c", "trees.c", "deflate.c", "compress.c", "uncompr.c")
@@ -83,7 +88,7 @@ def fetch(name, cache):
     with open(path, "rb") as f:
         for block in iter(lambda: f.read(1 << 20), b""):
             h.update(block)
-    if h.hexdigest() != want:
+    if want and h.hexdigest() != want:
         sys.exit("package: %s has SHA-256 %s, not the %s named in package.py: not used" % (path, h.hexdigest(), want))
     return path
 
@@ -144,6 +149,13 @@ def native_parts(system, vulkan, cache, top, kit):
         tool, lib, extra = os.path.join(top, "tools", "bin", "ps5-native-tool.exe"), os.path.join(kit_lift, "a64emit.dll"), ["-static"]
         emit_flags = ["-shared", "-static", "-fms-extensions", "-D_CRT_SECURE_NO_WARNINGS"]
         zbic_lib, zbic_flags = "zbic.dll", ["-shared", "-static"]
+    elif system.startswith("macos-"):
+        arch = "arm64" if system == "macos-arm64" else "x86_64"
+        cc, cxx = "clang", "clang++"
+        tool, lib = os.path.join(top, "tools", "bin", "ps5-native-tool"), os.path.join(kit_lift, "liba64emit.so")
+        extra = ["-arch", arch, "-mmacosx-version-min=11.0"]
+        emit_flags = ["-arch", arch, "-mmacosx-version-min=11.0", "-dynamiclib", "-fPIC"]
+        zbic_lib, zbic_flags = "zbic.so", ["-arch", arch, "-mmacosx-version-min=11.0", "-dynamiclib", "-fPIC"]
     else:
         cc, cxx = "gcc", "g++"
         tool, lib, extra = os.path.join(top, "tools", "bin", "ps5-native-tool"), os.path.join(kit_lift, "liba64emit.so"), ["-static"]
@@ -165,7 +177,7 @@ def native_parts(system, vulkan, cache, top, kit):
     # (compiled by the pinned LLVM on both systems, as Longshot's own builds compile it: the Linux runner's GCC 11 made a
     # library that read no ZBIC frame (zbic_check.c). On Linux llvm-mingw's clang is told the PC's own target; its C library
     # is the build PC's)
-    zbic_cc = [cc] if system == "windows-x64" else \
+    zbic_cc = [cc] if (system == "windows-x64" or system.startswith("macos-")) else \
         [os.path.join(unpack(fetch("llvm-linux", cache), os.path.join(cache, "llvm-linux")), "bin", "clang"), "--target=x86_64-linux-gnu"]
     run(zbic_cc + ["-O2", "-w", "-DZSTD_ZBIC_SUPPORT=1", "-I", zbic_src, os.path.join(zbic_src, "zstd.c"),
                    os.path.join(zbic_src, "zbic_api.c"), os.path.join(HERE, "zbic_check.c")] +
@@ -183,13 +195,16 @@ def native_parts(system, vulkan, cache, top, kit):
 def stage(system, a):
     """the folder: top"""
     linux = system == "linux-x64"
-    top = os.path.join(a.out, system, "PS5LongshotPlusBuilder")
-    shutil.rmtree(top, ignore_errors=True)
+    macos = system.startswith("macos-")
+    base_out = os.path.join(a.out, system)
+    shutil.rmtree(base_out, ignore_errors=True)
+    top = os.path.join(base_out, "PS5LongshotPlusBuilder.app", "Contents", "MacOS") if macos else os.path.join(base_out, "PS5LongshotPlusBuilder")
     os.makedirs(top)
     vulkan = os.environ.get("PS5_VULKAN") or os.path.join(ROOT, "ps5", "deps", "PS5_Vulkan")
 
     # ---- Python and its packages ----
-    with tarfile.open(fetch("python-linux" if linux else "python-windows", a.cache)) as t:
+    py_key = "python-linux" if linux else (system.replace("macos-", "python-macos-") if macos else "python-windows")
+    with tarfile.open(fetch(py_key, a.cache)) as t:
         t.extractall(top, filter="tar")
     host_py = os.path.join(unpack(fetch("python-linux", a.cache), os.path.join(a.cache, "python-linux")), "bin", "python3")
     if linux:
@@ -203,6 +218,15 @@ def stage(system, a):
             shutil.copy2(os.path.realpath(cursor), os.path.join(qt_lib, "libxcb-cursor.so.0"))
         else:
             say("no libxcb-cursor.so.0 on this PC to take along (apt install libxcb-cursor0): the window will ask the player's")
+    elif macos:
+        plat = "macosx_11_0_arm64" if system == "macos-arm64" else "macosx_10_13_x86_64"
+        wheels = os.path.join(a.cache, "wheels-" + system)
+        shutil.rmtree(wheels, ignore_errors=True)
+        run([sys.executable, "-I", "-m", "pip", "download", "-q", "--disable-pip-version-check", "--only-binary=:all:", "--platform", plat, "--python-version", "3.13", "--implementation", "cp", "-d", wheels] + PACKAGES)
+        site = os.path.join(top, "python", "lib", "python3.13", "site-packages")
+        for w in sorted(os.listdir(wheels)):
+            with zipfile.ZipFile(os.path.join(wheels, w)) as z: z.extractall(site)
+        shutil.rmtree(os.path.join(top, "python", "share"), ignore_errors=True)
     else:
         # (Windows' wheels, fetched and unpacked by this PC's Python: a wheel is a zip of what goes in site-packages)
         wheels = os.path.join(a.cache, "wheels-windows")
@@ -215,7 +239,8 @@ def stage(system, a):
                 z.extractall(site)
 
     # ---- the compiler ----
-    llvm = unpack(fetch("llvm-linux" if linux else "llvm-windows", a.cache), os.path.join(a.cache, "llvm-linux" if linux else "llvm-windows"))
+    llvm_key = "llvm-linux" if linux else ("llvm-macos" if macos else "llvm-windows")
+    llvm = unpack(fetch(llvm_key, a.cache), os.path.join(a.cache, llvm_key))
     for rel in LLVM_KEEP[system]:
         src, dst = os.path.join(llvm, rel), os.path.join(top, "tools", rel)
         os.makedirs(os.path.dirname(dst), exist_ok=True)
@@ -223,7 +248,7 @@ def stage(system, a):
             shutil.copytree(src, dst, symlinks=True)
         else:
             shutil.copy2(src, dst, follow_symlinks=False)
-    if not linux:
+    if system == "windows-x64":
         shutil.copy2(os.path.join(top, "tools", "bin", "clang-23.exe"), os.path.join(top, "tools", "bin", "clang.exe"))
 
     # ---- the window, the build, the kit, the system's own programs ----
@@ -236,8 +261,8 @@ def stage(system, a):
     shutil.copy2(os.path.join(ROOT, "LICENSE"), os.path.join(top, "LICENSE"))
     ver = version()
     open(os.path.join(top, "VERSION"), "w").write(ver + "\n")
-    if linux:
-        launcher = os.path.join(top, "ps5-longshot-plus-builder")
+    if linux or macos:
+        launcher = os.path.join(top, "PS5LongshotPlusBuilder" if macos else "ps5-longshot-plus-builder")
         with open(launcher, "w") as f:
             f.write('#!/bin/sh\n# PS5 Longshot Plus Builder: the window. "--cli ..." runs the build without it (app/pipeline.py\'s options).\n'
                     'here=$(cd -- "$(dirname -- "$(readlink -f -- "$0")")" && pwd)\n'
@@ -245,8 +270,15 @@ def stage(system, a):
                     'if [ "${1:-}" = "--cli" ]; then shift; exec "$here/python/bin/python3" -I -u "$here/app/pipeline.py" "$@"; fi\n'
                     'exec "$here/python/bin/python3" -I "$here/app/app.py" "$@"\n')
         os.chmod(launcher, os.stat(launcher).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-    with open(os.path.join(top, "README.txt"), "w", newline="\r\n" if not linux else "\n") as f:
-        f.write(README % {"version": ver, "start": "the AppImage" if linux else "PS5LongshotPlusBuilder.exe"})
+    if macos:
+        contents = os.path.dirname(top)
+        os.makedirs(os.path.join(contents, "Resources"), exist_ok=True)
+        shutil.copy2(os.path.join(ROOT, "ps5", "sce_sys", "icon0.png"), os.path.join(contents, "Resources", "longshot.png"))
+        open(os.path.join(contents, "Info.plist"), "w").write('<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://apple.com"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>PS5LongshotPlusBuilder</string><key>CFBundleIdentifier</key><string>dev.longshot.ps5builder</string><key>CFBundleName</key><string>PS5 Longshot Plus Builder</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>%s</string><key>NSHighResolutionCapable</key><true/></dict></plist>\n' % ver)
+        top = os.path.dirname(contents)
+        subprocess.run(["codesign", "--force", "--deep", "-s", "-", top], check=False)
+    with open(os.path.join(os.path.dirname(top) if macos else top, "README.txt"), "w", newline="\r\n" if system == "windows-x64" else "\n") as f:
+        f.write(README % {"version": ver, "start": "PS5LongshotPlusBuilder.app" if macos else ("the AppImage" if linux else "PS5LongshotPlusBuilder.exe")})
     return top, ver
 
 
@@ -290,7 +322,7 @@ def main():
     if a.system == "linux-x64":
         out = appimage(top, ver, a)
     else:
-        out = os.path.join(a.out, "PS5LongshotPlusBuilder-%s-windows-x64.zip" % ver)
+        out = os.path.join(a.out, "PS5LongshotPlusBuilder-%s-%s.zip" % (ver, a.system))
         if os.path.exists(out):
             os.remove(out)
         with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
