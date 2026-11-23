@@ -164,7 +164,7 @@ def native_parts(system, vulkan, cache, top, kit):
     objs = []
     for f in ZLIB_SOURCES:
         o = os.path.join(build, f[:-2] + ".o")
-        run([cc, "-O2", "-w", "-c", os.path.join(zlib, f), "-o", o])
+        run([cc, "-O2", "-w"] + (extra if system.startswith("macos-") else []) + ["-c", os.path.join(zlib, f), "-o", o])
         objs.append(o)
     os.makedirs(os.path.dirname(tool), exist_ok=True)
     run([cxx, "-std=c++20", "-O2", "-w", "-I", zlib] + [os.path.join(native, f) for f in NATIVE_SOURCES] + objs + extra + ["-o", tool])
