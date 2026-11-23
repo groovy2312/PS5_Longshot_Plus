@@ -218,15 +218,16 @@ def stage(system, a):
         else:
             say("no libxcb-cursor.so.0 on this PC to take along (apt install libxcb-cursor0): the window will ask the player's")
     elif macos:
-        plat = "macosx_11_0_arm64" if system == "macos-arm64" else "macosx_10_13_x86_64"
+        plat = "macosx_11_0_arm64" if system == "macos-arm64" else "macosx_12_0_x86_64"
         wheels = os.path.join(a.cache, "wheels-" + system)
         shutil.rmtree(wheels, ignore_errors=True)
-        mac_pkgs = ["PyQt6==6.11.0" if x.startswith("PyQt6==") else x for x in PACKAGES]
+        mac_pkgs = ["PyQt6==6.10.2" if x.startswith("PyQt6==") else x for x in PACKAGES]
         run([sys.executable, "-I", "-m", "pip", "download", "-q", "--disable-pip-version-check", "--only-binary=:all:", "--platform", plat, "--python-version", "3.13", "--implementation", "cp", "-d", wheels] + mac_pkgs)
         site = os.path.join(top, "python", "lib", "python3.13", "site-packages")
         for w in sorted(os.listdir(wheels)):
             with zipfile.ZipFile(os.path.join(wheels, w)) as z: z.extractall(site)
         shutil.rmtree(os.path.join(top, "python", "share"), ignore_errors=True)
+        shutil.rmtree(os.path.join(top, "python", "include"), ignore_errors=True)
     else:
         host_py = os.path.join(unpack(fetch("python-linux", a.cache), os.path.join(a.cache, "python-linux")), "bin", "python3")
         # (Windows' wheels, fetched and unpacked by this PC's Python: a wheel is a zip of what goes in site-packages)
