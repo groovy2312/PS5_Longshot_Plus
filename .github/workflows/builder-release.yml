@@ -175,7 +175,7 @@ jobs:
           python3 -I ps5/builder/package.py --system macos-x64
       - name: Verify macOS Apple Silicon bundle
         run: |
-          shasum -a 256 -c dist/builder/*-macos-arm64.zip.sha256
+          (cd dist/builder && shasum -a 256 -c *-macos-arm64.zip.sha256 && shasum -a 256 -c *-macos-x64.zip.sha256)
           mkdir -p /tmp/mac-test
           ditto -x -k dist/builder/*-macos-arm64.zip /tmp/mac-test
           /tmp/mac-test/PS5LongshotPlusBuilder.app/Contents/MacOS/PS5LongshotPlusBuilder --cli --check
