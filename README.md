@@ -118,7 +118,6 @@ game**, by the **PS5 Longshot Plus Builder**, then copied to the console.
 | Windows | `PS5LongshotPlusBuilder-<version>-windows-x64.zip` (a portable folder: no installer) |
 
 | macOS (Apple Silicon) | `PS5LongshotPlusBuilder-<version>-macos-arm64.zip` (`PS5LongshotPlusBuilder.app`) |
-
 | macOS (Intel) | `PS5LongshotPlusBuilder-<version>-macos-x64.zip` (`PS5LongshotPlusBuilder.app`) |
 
 Each file has a `.sha256` beside it. There is no PC version of the game here.
