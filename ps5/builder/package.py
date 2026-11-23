@@ -221,7 +221,8 @@ def stage(system, a):
         plat = "macosx_11_0_arm64" if system == "macos-arm64" else "macosx_10_13_x86_64"
         wheels = os.path.join(a.cache, "wheels-" + system)
         shutil.rmtree(wheels, ignore_errors=True)
-        run([sys.executable, "-I", "-m", "pip", "download", "-q", "--disable-pip-version-check", "--only-binary=:all:", "--platform", plat, "--python-version", "3.13", "--implementation", "cp", "-d", wheels] + PACKAGES)
+        mac_pkgs = ["PyQt6==6.11.0" if x.startswith("PyQt6==") else x for x in PACKAGES]
+        run([sys.executable, "-I", "-m", "pip", "download", "-q", "--disable-pip-version-check", "--only-binary=:all:", "--platform", plat, "--python-version", "3.13", "--implementation", "cp", "-d", wheels] + mac_pkgs)
         site = os.path.join(top, "python", "lib", "python3.13", "site-packages")
         for w in sorted(os.listdir(wheels)):
             with zipfile.ZipFile(os.path.join(wheels, w)) as z: z.extractall(site)
