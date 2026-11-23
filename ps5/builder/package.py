@@ -153,9 +153,9 @@ def native_parts(system, vulkan, cache, top, kit):
         arch = "arm64" if system == "macos-arm64" else "x86_64"
         cc, cxx = "clang", "clang++"
         tool, lib = os.path.join(top, "tools", "bin", "ps5-native-tool"), os.path.join(kit_lift, "liba64emit.so")
-        extra = ["-arch", arch, "-mmacosx-version-min=11.0"]
-        emit_flags = ["-arch", arch, "-mmacosx-version-min=11.0", "-dynamiclib", "-fPIC"]
-        zbic_lib, zbic_flags = "zbic.so", ["-arch", arch, "-mmacosx-version-min=11.0", "-dynamiclib", "-fPIC"]
+        extra = ["-arch", arch, "-mmacosx-version-min=12.0"]
+        emit_flags = ["-arch", arch, "-mmacosx-version-min=12.0", "-dynamiclib", "-fPIC"]
+        zbic_lib, zbic_flags = "zbic.so", ["-arch", arch, "-mmacosx-version-min=12.0", "-dynamiclib", "-fPIC"]
     else:
         cc, cxx = "gcc", "g++"
         tool, lib, extra = os.path.join(top, "tools", "bin", "ps5-native-tool"), os.path.join(kit_lift, "liba64emit.so"), ["-static"]
@@ -291,7 +291,7 @@ def stage(system, a):
             subprocess.run(["sips", "-s", "format", "png", "-z", str(sz), str(sz), src_png, "--out", os.path.join(iconset, "icon_%dx%d.png" % (sz, sz))], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
             subprocess.run(["sips", "-s", "format", "png", "-z", str(sz * 2), str(sz * 2), src_png, "--out", os.path.join(iconset, "icon_%dx%d@2x.png" % (sz, sz))], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
         subprocess.run(["iconutil", "-c", "icns", iconset, "-o", os.path.join(res_dir, "longshot.icns")], check=False)
-        open(os.path.join(contents, "Info.plist"), "w").write('<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://apple.com"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>PS5LongshotPlusBuilder</string><key>CFBundleIconFile</key><string>longshot</string><key>CFBundleIdentifier</key><string>dev.longshot.ps5builder</string><key>CFBundleName</key><string>%s</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>%s</string><key>NSHighResolutionCapable</key><true/></dict></plist>\n' % ("PS5 Longshot Plus Builder (Apple Silicon)" if system == "macos-arm64" else "PS5 Longshot Plus Builder (Intel)", ver))
+        open(os.path.join(contents, "Info.plist"), "w").write('<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://apple.com"><plist version="1.0"><dict><key>CFBundleExecutable</key><string>PS5LongshotPlusBuilder</string><key>CFBundleIconFile</key><string>longshot</string><key>CFBundleIdentifier</key><string>dev.longshot.ps5builder</string><key>CFBundleName</key><string>%s</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>%s</string><key>LSMinimumSystemVersion</key><string>12.0</string><key>NSHighResolutionCapable</key><true/></dict></plist>\n' % ("PS5 Longshot Plus Builder (Apple Silicon)" if system == "macos-arm64" else "PS5 Longshot Plus Builder (Intel)", ver))
         top = os.path.dirname(contents)
         subprocess.run(["codesign", "--force", "--deep", "-s", "-", top], check=False)
     with open(os.path.join(os.path.dirname(top) if macos else top, "README.txt"), "w", newline="\r\n" if system == "windows-x64" else "\n") as f:
